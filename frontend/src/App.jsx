@@ -1,35 +1,40 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// frontend/src/App.jsx
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import axios from './api/axios';
+import ProductsPage from './pages/ProductsPage';
+import SalesPage from './pages/SalesPage';
+import StockHistoryPage from './pages/StockHistoryPage';
+import DashboardPage from './pages/DashboardPage';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  // Set dev auth header for now (devtoken defined in backend)
+  useEffect(() => {
+    axios.devAuth();
+  }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <BrowserRouter>
+      <div style={{ padding: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <header style={{ marginBottom: 16 }}>
+          <h1>DIOFANY'S Bakery — Inventory</h1>
+          <nav style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <Link to="/">Dashboard</Link>
+            <Link to="/products">Products</Link>
+            <Link to="/sales">Sales</Link>
+            <Link to="/stock-history">Stock History</Link>
+          </nav>
+        </header>
 
-export default App
+        <main>
+          <Routes>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/sales" element={<SalesPage />} />
+            <Route path="/stock-history" element={<StockHistoryPage />} />
+          </Routes>
+        </main>
+      </div>
+    </BrowserRouter>
+  );
+}
