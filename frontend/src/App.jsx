@@ -5,7 +5,9 @@ import axios from './api/axios';
 import ProductsPage from './pages/ProductsPage';
 import SalesPage from './pages/SalesPage';
 import StockHistoryPage from './pages/StockHistoryPage';
+import ExpensesPage from './pages/ExpensesPage';
 import DashboardPage from './pages/DashboardPage';
+import ReportsPage from './pages/ReportsPage';
 
 export default function App() {
   // Set dev auth header for now (devtoken defined in backend)
@@ -32,6 +34,8 @@ export default function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/stock-history" element={<StockHistoryPage />} />
+            <Route path="/expenses" element={<ExpensesPage />} />
+            <Route path="/report" element={<ReportsPage />} />
           </Routes>
         </main>
       </div>

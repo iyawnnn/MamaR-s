@@ -3,64 +3,69 @@ import axios from '../api/axios';
 
 export default function SalesForm() {
   const [products, setProducts] = useState([]);
-  const [selected, setSelected] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [customerName, setCustomerName] = useState('');
-  const [price, setPrice] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0);
   const [manualPrice, setManualPrice] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  // Fetch products on mount
+  // ✅ Fetch products on mount
   useEffect(() => {
     axios.get('/products')
-      .then((r) => setProducts(r.data))
-      .catch((e) => console.error('Failed to load products', e));
+      .then((res) => setProducts(res.data))
+      .catch((err) => console.error('Failed to load products', err));
   }, []);
 
-  // Auto-calculate total price whenever product or quantity changes
+  // ✅ Auto-calculate price when selected product or quantity changes
   useEffect(() => {
-    const product = products.find((p) => p._id === selected);
+    const product = products.find((p) => p._id === selectedProduct);
     if (product && !manualPrice) {
-      setPrice(product.sellingPrice * quantity);
+      const newTotal = product.sellingPrice * quantity;
+      setTotalPrice(isNaN(newTotal) ? 0 : newTotal);
     }
-  }, [selected, quantity, products, manualPrice]);
+  }, [selectedProduct, quantity, products, manualPrice]);
 
-  // Handle sale submission
+  // ✅ Handle form submit
   const handleSale = async (e) => {
     e.preventDefault();
-    if (!selected) return alert('Please select a product');
+
+    if (!selectedProduct) return alert('Please select a product');
     if (!customerName.trim()) return alert('Enter customer name');
     if (quantity <= 0) return alert('Quantity must be greater than 0');
 
     setProcessing(true);
+
     try {
-      const res = await axios.post('/sales', {
-        productId: selected,
+      await axios.post('/sales', {
+        productId: selectedProduct,
         quantity: Number(quantity),
         customerName,
-        totalPrice: Number(price),
+        totalPrice: Number(totalPrice)
       });
+
       alert('✅ Sale recorded successfully!');
 
-      // Refresh product list after sale
-      const prodRes = await axios.get('/products');
-      setProducts(prodRes.data);
+      // Refresh product list (update stocks)
+      const res = await axios.get('/products');
+      setProducts(res.data);
 
       // Reset form
       setCustomerName('');
-      setSelected('');
+      setSelectedProduct('');
       setQuantity(1);
-      setPrice(0);
+      setTotalPrice(0);
       setManualPrice(false);
+
     } catch (err) {
-      alert(err?.response?.data?.message || 'Sale failed');
+      alert(err?.response?.data?.message || '❌ Failed to record sale.');
     } finally {
       setProcessing(false);
     }
   };
 
   return (
-    <form onSubmit={handleSale} style={{ maxWidth: 480 }}>
+    <form onSubmit={handleSale} style={{ maxWidth: 480, margin: '0 auto' }}>
       <h3>Record a Sale</h3>
 
       <label>Customer Name</label>
@@ -74,20 +79,21 @@ export default function SalesForm() {
 
       <label>Product</label>
       <select
-        value={selected}
+        value={selectedProduct}
         onChange={(e) => {
-          setSelected(e.target.value);
+          setSelectedProduct(e.target.value);
           setManualPrice(false);
         }}
+        required
       >
         <option value="">-- select product --</option>
         {products.map((p) => (
           <option value={p._id} key={p._id}>
             {p.name} — ₱
-            {p.sellingPrice
+            {p?.sellingPrice
               ? Number(p.sellingPrice).toFixed(2)
               : '0.00'}{' '}
-            (stock: {p.stock ?? 0})
+            (stock: {p?.stock ?? 0})
           </option>
         ))}
       </select>
@@ -101,19 +107,22 @@ export default function SalesForm() {
           setQuantity(Number(e.target.value));
           setManualPrice(false);
         }}
+        required
       />
 
       <label>Total Price (₱)</label>
       <input
         type="number"
-        value={price}
+        value={totalPrice}
         onChange={(e) => {
-          setPrice(Number(e.target.value));
+          setTotalPrice(Number(e.target.value));
           setManualPrice(true);
         }}
+        step="0.01"
+        required
       />
       <small style={{ color: '#666' }}>
-        Auto-calculated (editable)
+        Auto-calculated based on product price (editable)
       </small>
 
       <div style={{ marginTop: 12 }}>
