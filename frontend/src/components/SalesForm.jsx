@@ -1,20 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import axios from '../api/axios';
+import React, { useEffect, useState } from "react";
+import axios from "../api/axios";
 
-export default function SalesForm() {
+export default function SalesForm({ onSaleRecorded }) {
   const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [customerName, setCustomerName] = useState('');
+  const [customerName, setCustomerName] = useState("");
   const [totalPrice, setTotalPrice] = useState(0);
   const [manualPrice, setManualPrice] = useState(false);
   const [processing, setProcessing] = useState(false);
 
   // ✅ Fetch products on mount
   useEffect(() => {
-    axios.get('/products')
+    axios
+      .get("/products")
       .then((res) => setProducts(res.data))
-      .catch((err) => console.error('Failed to load products', err));
+      .catch((err) => console.error("Failed to load products", err));
   }, []);
 
   // ✅ Auto-calculate price when selected product or quantity changes
@@ -30,42 +31,44 @@ export default function SalesForm() {
   const handleSale = async (e) => {
     e.preventDefault();
 
-    if (!selectedProduct) return alert('Please select a product');
-    if (!customerName.trim()) return alert('Enter customer name');
-    if (quantity <= 0) return alert('Quantity must be greater than 0');
+    if (!selectedProduct) return alert("Please select a product");
+    if (!customerName.trim()) return alert("Enter customer name");
+    if (quantity <= 0) return alert("Quantity must be greater than 0");
 
     setProcessing(true);
 
     try {
-      await axios.post('/sales', {
+      await axios.post("/sales", {
         productId: selectedProduct,
         quantity: Number(quantity),
         customerName,
-        totalPrice: Number(totalPrice)
+        totalPrice: Number(totalPrice),
       });
 
-      alert('✅ Sale recorded successfully!');
+      alert("✅ Sale recorded successfully!");
+
+      // 🔄 Notify parent (SalesPage) to refresh sales list
+      if (onSaleRecorded) onSaleRecorded();
 
       // Refresh product list (update stocks)
-      const res = await axios.get('/products');
+      const res = await axios.get("/products");
       setProducts(res.data);
 
       // Reset form
-      setCustomerName('');
-      setSelectedProduct('');
+      setCustomerName("");
+      setSelectedProduct("");
       setQuantity(1);
       setTotalPrice(0);
       setManualPrice(false);
-
     } catch (err) {
-      alert(err?.response?.data?.message || '❌ Failed to record sale.');
+      alert(err?.response?.data?.message || "❌ Failed to record sale.");
     } finally {
       setProcessing(false);
     }
   };
 
   return (
-    <form onSubmit={handleSale} style={{ maxWidth: 480, margin: '0 auto' }}>
+    <form onSubmit={handleSale} style={{ maxWidth: 480, margin: "0 auto" }}>
       <h3>Record a Sale</h3>
 
       <label>Customer Name</label>
@@ -90,9 +93,7 @@ export default function SalesForm() {
         {products.map((p) => (
           <option value={p._id} key={p._id}>
             {p.name} — ₱
-            {p?.sellingPrice
-              ? Number(p.sellingPrice).toFixed(2)
-              : '0.00'}{' '}
+            {p?.sellingPrice ? Number(p.sellingPrice).toFixed(2) : "0.00"}{" "}
             (stock: {p?.stock ?? 0})
           </option>
         ))}
@@ -121,13 +122,13 @@ export default function SalesForm() {
         step="0.01"
         required
       />
-      <small style={{ color: '#666' }}>
+      <small style={{ color: "#666" }}>
         Auto-calculated based on product price (editable)
       </small>
 
       <div style={{ marginTop: 12 }}>
         <button type="submit" disabled={processing}>
-          {processing ? 'Processing…' : 'Record Sale'}
+          {processing ? "Processing…" : "Record Sale"}
         </button>
       </div>
     </form>

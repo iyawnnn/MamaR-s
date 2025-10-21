@@ -1,6 +1,5 @@
-// DashboardPage.jsx
 import React, { useEffect, useState, useCallback } from "react";
-import axios from "../api/axios"; // your configured axios instance
+import axios from "../api/axios";
 import KpiCards from "../components/KpiCards";
 import DateRangePicker from "../components/DateRangePicker";
 import SalesLineChart from "../components/SalesLineChart";
@@ -30,43 +29,41 @@ export default function DashboardPage() {
     cat: false,
   });
 
+  const formatShortDate = (isoDate) => {
+    const d = new Date(isoDate);
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   const fetchAll = useCallback(async ({ start, end }) => {
     try {
       setLoading({ kpi: true, sales: true, gross: true, cat: true });
 
-      const kpiPromise = axios.get("/reports/summary", {
-        params: { start, end },
-      });
-      const salesPromise = axios.get("/dashboard/sales-over-time", {
-        params: { start, end },
-      });
-      const grossPromise = axios.get("/dashboard/gross-vs-net", {
-        params: { start, end },
-      });
-      const catPromise = axios.get("/dashboard/sales-by-category", {
-        params: { start, end },
-      });
-
       const [kpiRes, salesRes, grossRes, catRes] = await Promise.all([
-        kpiPromise,
-        salesPromise,
-        grossPromise,
-        catPromise,
+        axios.get("/reports/summary", { params: { start, end } }),
+        axios.get("/dashboard/sales-over-time", { params: { start, end } }),
+        axios.get("/dashboard/gross-vs-net", { params: { start, end } }),
+        axios.get("/dashboard/sales-by-category", { params: { start, end } }),
       ]);
 
       setSummary(kpiRes.data);
 
-      // sales: fill missing dates
+      // 📈 Format and fill missing dates
       const sSeries = salesRes.data.series || [];
       const filled = fillMissingDates(
         sSeries,
         salesRes.data.start,
         salesRes.data.end,
         ["net", "gross", "cogs", "discounts"]
-      );
+      ).map((d) => ({
+        ...d,
+        date: formatShortDate(d.date),
+      }));
       setSalesSeries(filled);
 
-      // gross vs net (period formatted)
+      // 🧱 Gross vs Net
       const gSeries = (grossRes.data.series || []).map((s) => ({
         period: s.period,
         gross: s.gross,
@@ -74,23 +71,22 @@ export default function DashboardPage() {
       }));
       setGrossNetSeries(gSeries);
 
-      // categories
+      // 🥧 Sales by Category
       setCategories(
         (catRes.data.categories || []).map((c) => ({
-          category: c.category || "Unk",
-          gross: c.gross,
-          net: c.net,
-          quantity: c.quantity,
+          category: c.category || "Uncategorized",
+          gross: c.gross || 0,
+          net: c.net || 0,
+          quantity: c.quantity || 0,
         }))
       );
     } catch (err) {
-      console.error("Failed to fetch dashboard data", err);
+      console.error("❌ Failed to fetch dashboard data", err);
     } finally {
       setLoading({ kpi: false, sales: false, gross: false, cat: false });
     }
   }, []);
 
-  // initial load
   useEffect(() => {
     fetchAll(range);
   }, [fetchAll, range.start, range.end]);

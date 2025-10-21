@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import axios from '../api/axios';
-import SalesForm from '../components/SalesForm';
+import React, { useEffect, useState } from "react";
+import axios from "../api/axios";
+import SalesForm from "../components/SalesForm";
 
 export default function SalesPage() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Fetch sales list
   const fetchSales = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/sales');
+      const res = await axios.get("/sales");
       setSales(res.data);
     } catch (err) {
-      console.error('Failed to fetch sales', err);
+      console.error("Failed to fetch sales", err);
     } finally {
       setLoading(false);
     }
@@ -24,13 +23,13 @@ export default function SalesPage() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <h2>Sales</h2>
 
       {/* Sale Form */}
       <SalesForm onSaleRecorded={fetchSales} />
 
-      <hr style={{ margin: '20px 0' }} />
+      <hr style={{ margin: "20px 0" }} />
 
       <h3>Sales Records</h3>
       {loading ? (
@@ -51,9 +50,14 @@ export default function SalesPage() {
           <tbody>
             {sales.map((s) => (
               <tr key={s._id}>
-                <td>{new Date(s.date).toLocaleString()}</td>
+                <td>
+                  {new Date(s.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </td>
                 <td>{s.customerName}</td>
-                <td>{s.productId?.name || '—'}</td>
+                <td>{s.productId?.name || "—"}</td>
                 <td>{s.quantity}</td>
                 <td>₱{Number(s.totalPrice).toFixed(2)}</td>
               </tr>

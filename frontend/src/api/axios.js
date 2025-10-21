@@ -1,18 +1,24 @@
-// frontend/src/api/axios.js
 import axios from 'axios';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
-// Basic axios instance. Update headers for auth when you implement JWT.
-const instance = axios.create({
-  baseURL: API,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
+const axiosInstance = axios.create({
+  baseURL: API_URL,
 });
 
-// For dev - include dev token for protected endpoints
-instance.devAuth = (token = 'devtoken') => {
-  instance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+// Set initial token if exists in localStorage
+const token = localStorage.getItem('token');
+if (token) {
+  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+
+// Helper to dynamically set or remove token
+axiosInstance.setToken = (token) => {
+  if (token) {
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete axiosInstance.defaults.headers.common['Authorization'];
+  }
 };
 
-export default instance;
+export default axiosInstance;
