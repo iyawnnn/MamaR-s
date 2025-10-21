@@ -48,7 +48,6 @@ export default function ReportsPage() {
             <Card title="Gross Sales" value={summary.grossSales} />
             <Card title="Discounts" value={summary.discounts} />
             <Card title="Net Sales" value={summary.netSales} />
-            <Card title="COGS" value={summary.cogs} />
             <Card title="Gross Profit" value={summary.grossProfit} />
             <Card title="Operating Expenses" value={summary.operatingExpenses} />
             <Card title="Net Profit" value={summary.netProfit} />

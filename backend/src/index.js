@@ -9,8 +9,7 @@ const salesRoutes = require("./routes/salesRoutes");
 const stockLogRoutes = require("./routes/stockLogRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const reportRoutes = require("./routes/reportRoutes");
-
-
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 
 const app = express();
@@ -31,6 +30,7 @@ app.use("/api/sales", salesRoutes);
 app.use("/api/stock-logs", stockLogRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/dashboard", dashboardRoutes); // ⬅️ add this new one
 
 // ✅ 404 fallback
 app.use((req, res) => {
@@ -39,4 +39,4 @@ app.use((req, res) => {
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

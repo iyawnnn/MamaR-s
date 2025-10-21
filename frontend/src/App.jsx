@@ -25,6 +25,8 @@ export default function App() {
             <Link to="/products">Products</Link>
             <Link to="/sales">Sales</Link>
             <Link to="/stock-history">Stock History</Link>
+            <Link to="/expenses">Expenses</Link>
+            <Link to="/report">Report</Link>
           </nav>
         </header>
 
