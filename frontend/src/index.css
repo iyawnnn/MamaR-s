@@ -1,0 +1,71 @@
+/* === FONT IMPORTS === */
+@font-face {
+  font-family: 'Cal Sans';
+  src: url('/src/assets/fonts/CalSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Matter';
+  src: url('/src/assets/fonts/Matter-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* === COLOR PALETTE === */
+:root {
+  --primary: #674F2D;      /* Field Drab */
+  --accent1: #9D825D;      /* Chamoisee */
+  --accent2: #D2B48C;      /* Tan */
+  --accent3: #E4D5B4;      /* Dutch White */
+  --background: #F5F5DC;   /* Beige */
+  --text-dark: #2b2b2b;
+  --text-primary: #75000C; /* Burgundy for titles */
+}
+
+/* === CSS RESET === */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* === GLOBAL STYLES === */
+html,
+body {
+  height: 100%;
+  width: 100%;
+  font-family: 'Matter', sans-serif;
+  background-color: var(--background);
+  color: var(--text-dark);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === TYPOGRAPHY === */
+h1,
+h2,
+h3,
+.title-text {
+  font-family: 'Cal Sans', sans-serif;
+  color: var(--text-primary);
+}
+
+p {
+  line-height: 1.6;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--primary);
+}

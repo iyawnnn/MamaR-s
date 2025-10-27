@@ -17,15 +17,15 @@ const PrivateRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" />;
 };
 
-
 export default function App() {
   const { user, logout } = useContext(AuthContext);
 
   return (
-    <div style={{ padding: 16, fontFamily: "Inter, system-ui, sans-serif" }}>
-      <header style={{ marginBottom: 16 }}>
-        <h1>DIOFANY'S Bakery — Inventory</h1>
-        {user && (
+
+    <div>
+      {user && (
+        <header style={{ marginBottom: 16 }}>
+          <h1>Bakery — Inventory</h1>
           <nav style={{ display: "flex", gap: 12, marginTop: 8 }}>
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/products">Products</Link>
@@ -40,8 +40,8 @@ export default function App() {
               Logout
             </button>
           </nav>
-        )}
-      </header>
+        </header>
+      )}
 
       <main>
         <Routes>

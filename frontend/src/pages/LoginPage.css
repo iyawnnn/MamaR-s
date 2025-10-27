@@ -1,0 +1,204 @@
+/* ===== LOGIN PAGE STYLING ===== */
+
+
+
+/* === CONTAINER (2 COLUMNS) === */
+.login-container {
+  display: flex;
+  height: 100vh;
+  font-family: 'Matter', sans-serif;
+  background-color: var(--background);
+}
+
+/* === LEFT SIDE (LOGIN CARD) === */
+.login-card {
+  flex: 1; /* 50% width */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--accent3);
+  padding: 3rem 2.5rem;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+  border-top-right-radius: 30px;
+  border-bottom-right-radius: 30px;
+}
+
+/* === RIGHT SIDE (IMAGE) === */
+.login-image {
+  flex: 1; /* 50% width */
+  background: url('/src/assets/images/bakery-bg.jpg') center/cover no-repeat;
+}
+
+/* === TITLE === */
+.login-title {
+  font-family: 'Cal Sans', sans-serif;
+  font-weight: 400;
+  font-size: 2.2rem;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  align-items: left;
+}
+
+.login-paragraph {
+  font-size: 1rem;
+  color: var(--text-dark);
+  margin-bottom: 2rem;
+  text-align: center;
+  color: var(--accent1);
+}
+
+/* === FORM === */
+.login-form {
+  width: 100%;
+  max-width: 360px;
+  text-align: left;
+  font-family: 'Matter', sans-serif;
+}
+
+.login-form label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+  color: var(--accent1);
+}
+
+.login-form input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--accent2);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  transition: 0.3s border-color, 0.3s box-shadow;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(103, 79, 45, 0.15);
+}
+
+/* === ERROR TEXT === */
+.error-text {
+  color: #a83232;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* === BUTTON === */
+.login-btn {
+  width: 100%;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 0.8rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 400;
+  font-family: 'Cal Sans', sans-serif;
+  transition: 0.3s background-color, transform 0.2s;
+}
+
+.login-btn:hover {
+  background: var(--accent1);
+  transform: translateY(-2px);
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-wrapper input {
+  width: 100%;
+  height: 48px;
+  padding: 0 2.8rem;
+  border: 1px solid var(--accent2);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: 'Matter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(103, 79, 45, 0.15);
+}
+
+/* === ICONS === */
+.input-icon,
+.toggle-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Left icon (email/lock) */
+.input-icon {
+  left: 14px;
+  pointer-events: none;
+}
+
+/* Right icon (eye toggle) */
+.toggle-icon {
+  right: 14px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.toggle-icon:hover {
+  color: var(--accent1);
+}
+
+/* Adjustments for specific icons */
+.input-icon.bi-envelope,
+.input-icon.bi-lock {
+  transform: translateY(-50%); /* Keep exactly centered */
+}
+
+
+
+/* Error text */
+.error-text {
+  color: #b91c1c;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+  font-family: 'Matter', sans-serif;
+}
+
+
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .login-card {
+    flex: none;
+    width: 100%;
+    height: auto;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .login-image {
+    display: none;
+  }
+
+  .login-title {
+    font-size: 1.8rem;
+  }
+}
