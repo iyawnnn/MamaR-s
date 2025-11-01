@@ -67,12 +67,37 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+exports.setStock = async (req, res) => {
+  try {
+    const { stock } = req.body;
+    const productId = req.params.id;
+
+    // Validate the stock value
+    if (stock <= 0) {
+      return res.status(400).json({ message: 'Stock must be greater than 0' });
+    }
+
+    // Find the product by ID and set the stock to the new value
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    product.stock = stock;  // Set the stock directly
+    await product.save();
+
+    res.json({ message: 'Product stock updated successfully', product });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error updating stock' });
+  }
+};
+
 exports.deleteProduct = async (req, res) => {
   try {
-    // soft-delete: set archived true
-    const p = await Product.findByIdAndUpdate(req.params.id, { archived: true }, { new: true });
+    // Delete the product completely from the database
+    const p = await Product.findByIdAndDelete(req.params.id);
     if (!p) return res.status(404).json({ message: 'Product not found' });
-    res.json({ message: 'Product archived' });
+
+    res.json({ message: 'Product deleted successfully' });
   } catch (err) {
     handleError(res, err);
   }

@@ -29,13 +29,11 @@ export default function DashboardPage() {
     cat: false,
   });
 
-  const formatShortDate = (isoDate) => {
-    const d = new Date(isoDate);
-    return d.toLocaleDateString("en-US", {
+  const formatShortDate = (isoDate) =>
+    new Date(isoDate).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     });
-  };
 
   const fetchAll = useCallback(async ({ start, end }) => {
     try {
@@ -50,20 +48,15 @@ export default function DashboardPage() {
 
       setSummary(kpiRes.data);
 
-      // 📈 Format and fill missing dates
       const sSeries = salesRes.data.series || [];
       const filled = fillMissingDates(
         sSeries,
         salesRes.data.start,
         salesRes.data.end,
         ["net", "gross", "cogs", "discounts"]
-      ).map((d) => ({
-        ...d,
-        date: formatShortDate(d.date),
-      }));
+      ).map((d) => ({ ...d, date: formatShortDate(d.date) }));
       setSalesSeries(filled);
 
-      // 🧱 Gross vs Net
       const gSeries = (grossRes.data.series || []).map((s) => ({
         period: s.period,
         gross: s.gross,
@@ -71,7 +64,6 @@ export default function DashboardPage() {
       }));
       setGrossNetSeries(gSeries);
 
-      // 🥧 Sales by Category
       setCategories(
         (catRes.data.categories || []).map((c) => ({
           category: c.category || "Uncategorized",
@@ -96,19 +88,26 @@ export default function DashboardPage() {
     fetchAll({ start, end });
   };
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h3>Dashboard</h3>
+  // New color palette for charts
+  const CHART_COLORS = ["#674F2D", "#9D825D", "#D2B48C", "#E4D5B4"];
 
+  return (
+    <div
+      style={{
+        padding: 24,
+        background: "var(--background)",
+        minHeight: "100vh",
+      }}
+    >
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 12,
+          marginBottom: 24,
         }}
       >
-        <div style={{ fontSize: 12, color: "#666" }}>Financial snapshot</div>
+        <h3 style={{ color: "var(--primary)" }}>Dashboard</h3>
         <DateRangePicker
           onChange={onRangeChange}
           initialStart={range.start}
@@ -116,33 +115,72 @@ export default function DashboardPage() {
         />
       </div>
 
-      <section style={{ marginBottom: 20 }}>
+      {/* KPI CARDS */}
+      <section style={{ marginBottom: 24 }}>
         <KpiCards summary={summary} loading={loading.kpi} />
       </section>
 
+      {/* GRID LAYOUT */}
       <section
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr", // two equal columns
+          gap: 16,
+        }}
       >
-        <div style={{ background: "#f9f9fb", padding: 12, borderRadius: 8 }}>
-          <h4>Sales (net vs gross) — Daily</h4>
-          <SalesLineChart data={salesSeries} loading={loading.sales} />
-        </div>
-
-        <div style={{ background: "#f9f9fb", padding: 12, borderRadius: 8 }}>
-          <h4>Gross vs Net</h4>
-          <GrossVsNetBar data={grossNetSeries} loading={loading.gross} />
-        </div>
-
+        {/* Left column: Gross vs Net */}
         <div
           style={{
-            gridColumn: "1 / -1",
-            background: "#f9f9fb",
-            padding: 12,
-            borderRadius: 8,
+            background: "var(--accent3)",
+            padding: 16,
+            borderRadius: 12,
           }}
         >
-          <h4>Sales by Category</h4>
-          <CategoryPieChart data={categories} loading={loading.cat} />
+          <h4 style={{ marginBottom: 12, color: "var(--primary)" }}>
+            Gross vs Net
+          </h4>
+          <GrossVsNetBar
+            data={grossNetSeries}
+            loading={loading.gross}
+            colors={CHART_COLORS}
+          />
+        </div>
+
+        {/* Right column: Sales by Category */}
+        <div
+          style={{
+            background: "var(--accent3)",
+            padding: 16,
+            borderRadius: 12,
+          }}
+        >
+          <h4 style={{ marginBottom: 12, color: "var(--primary)" }}>
+            Sales by Category
+          </h4>
+          <CategoryPieChart
+            data={categories}
+            loading={loading.cat}
+            colors={CHART_COLORS}
+          />
+        </div>
+
+        {/* Bottom row: Sales Line Chart — spans full width */}
+        <div
+          style={{
+            gridColumn: "1 / -1", // span both columns
+            background: "var(--accent3)",
+            padding: 16,
+            borderRadius: 12,
+          }}
+        >
+          <h4 style={{ marginBottom: 12, color: "var(--primary)" }}>
+            Sales (Net vs Gross) — Daily
+          </h4>
+          <SalesLineChart
+            data={salesSeries}
+            loading={loading.sales}
+            colors={CHART_COLORS}
+          />
         </div>
       </section>
     </div>

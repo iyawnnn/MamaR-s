@@ -1,3 +1,4 @@
+// backend/src/routes/productRoutes.js
 const express = require("express");
 const router = express.Router();
 const {
@@ -5,14 +6,16 @@ const {
   addProduct,
   updateProduct,
   deleteProduct,
-  restockProduct
-} = require("../controllers/productController"); // adjust path if needed
+  restockProduct,
+  setStock, // Add the new setStock route
+} = require("../controllers/productController");
 
-// ✅ Routes
+// Routes
 router.get("/", getProducts);
 router.post("/", addProduct);
 router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
 router.post("/:id/restock", restockProduct);
+router.post("/:id/update-stock", setStock);  // New route to set stock
 
 module.exports = router;

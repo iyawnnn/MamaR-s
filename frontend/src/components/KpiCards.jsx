@@ -1,4 +1,3 @@
-// KpiCards.jsx
 import React from 'react';
 
 const currency = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -16,19 +15,31 @@ export default function KpiCards({ summary, loading }) {
     netProfit = 0
   } = summary || {};
 
-  const card = (title, value, sub) => (
-    <div style={{
-      background:'#fff', padding:16, borderRadius:8, boxShadow:'0 1px 4px rgba(0,0,0,0.08)',
-      minWidth:170
-    }}>
-      <div style={{ fontSize:12, color:'#666' }}>{title}</div>
-      <div style={{ fontSize:18, fontWeight:700 }}>{currency.format(value)}</div>
-      {sub && <div style={{ fontSize:12, color:'#888' }}>{sub}</div>}
+  const card = (title, value) => (
+    <div
+      style={{
+        background: 'var(--accent3)',  // Consistent background color
+        color: 'var(--primary)',        // Consistent text color
+        padding: 16,
+        borderRadius: 8,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+        minWidth: 170,
+        transition: '0.3s transform',
+      }}
+    >
+      <div style={{ fontSize: 12, color: '#666' }}>{title}</div>
+      <div style={{ fontSize: 18, fontWeight: 700 }}>{currency.format(value)}</div>
     </div>
   );
 
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))', gap:12 }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+        gap: 12,
+      }}
+    >
       {card('Total Gross Sales', grossSales)}
       {card('Net Sales', netSales)}
       {card('Gross Profit', grossProfit)}

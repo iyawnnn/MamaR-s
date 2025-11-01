@@ -20,11 +20,6 @@ const productSchema = new mongoose.Schema({
     required: true,
     default: 'Other'
   },
-  costPrice: {
-    type: Number,
-    required: [true, 'Cost price required'],
-    min: [0, 'Cost price cannot be negative']
-  },
   sellingPrice: {
     type: Number,
     required: [true, 'Selling price required'],

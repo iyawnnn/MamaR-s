@@ -1,4 +1,3 @@
-// SalesLineChart.jsx
 import React from "react";
 import {
   ResponsiveContainer,
@@ -32,14 +31,14 @@ export default function SalesLineChart({ data, valueKey = "net", loading }) {
             type="monotone"
             dataKey="net"
             name="Net"
-            stroke="#8884d8"
+            stroke="var(--primary)"  // Using primary color for Net sales
             dot={false}
           />
           <Line
             type="monotone"
             dataKey="gross"
             name="Gross"
-            stroke="#82ca9d"
+            stroke="var(--accent1)"  // Using accent1 color for Gross sales
             dot={false}
           />
         </LineChart>

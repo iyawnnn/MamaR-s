@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { Routes, Route, Navigate, Link } from "react-router-dom";
+import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { AuthContext } from "./contexts/AuthContext";
 import DashboardPage from "./pages/DashboardPage";
 import ProductsPage from "./pages/ProductsPage";
@@ -21,6 +21,7 @@ export default function App() {
   const { user, logout } = useContext(AuthContext);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const location = useLocation(); // Get the current location to check route changes
 
   // Update isMobile and auto-close sidebar on resize
   useEffect(() => {
@@ -32,6 +33,34 @@ export default function App() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Dynamically update the title based on the current route
+  useEffect(() => {
+    const path = location.pathname;
+    switch (path) {
+      case "/dashboard":
+        document.title = "Dashboard - Mama R's";
+        break;
+      case "/products":
+        document.title = "Products - Mama R's";
+        break;
+      case "/sales":
+        document.title = "Sales - Mama R's";
+        break;
+      case "/stock-history":
+        document.title = "Stock History - Mama R's";
+        break;
+      case "/expenses":
+        document.title = "Expenses - Mama R's";
+        break;
+      case "/reports":
+        document.title = "Reports - Mama R's";
+        break;
+      default:
+        document.title = "Mama R's"; // Default title
+        break;
+    }
+  }, [location.pathname]); // Run this effect whenever the route changes
 
   return (
     <div className={`app-container ${sidebarOpen ? "sidebar-open" : ""}`}>

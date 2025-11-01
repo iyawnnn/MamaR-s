@@ -46,17 +46,15 @@ export default function LoginPage() {
           <div className="input-wrapper">
             <i className="bi bi-lock input-icon"></i>
             <input
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? "text" : "password"} // Toggle password visibility
               placeholder="Password"
               value={password}
               required
               onChange={(e) => setPassword(e.target.value)}
             />
             <i
-              className={`bi ${
-                showPassword ? "bi-eye-slash" : "bi-eye"
-              } toggle-icon`}
-              onClick={() => setShowPassword(!showPassword)}
+              className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"} toggle-icon`} 
+              onClick={() => setShowPassword(!showPassword)} // Toggle password visibility
             ></i>
           </div>
 
