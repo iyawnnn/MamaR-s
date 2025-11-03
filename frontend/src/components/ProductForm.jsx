@@ -55,7 +55,6 @@ export default function ProductForm({ product, onClose }) {
           <option>Bread</option>
           <option>Pastry</option>
           <option>Cake</option>
-          <option>Drink</option>
           <option>Other</option>
         </select>
 

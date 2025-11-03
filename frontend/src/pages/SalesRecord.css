@@ -1,0 +1,119 @@
+/* === Sales Table === */
+.sales-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.sales-table th,
+.sales-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.sales-table th {
+  background-color: var(--accent1);
+  color: white;
+  font-weight: 600;
+}
+
+.sales-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* === Pagination Controls === */
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pagination button {
+  padding: 8px 16px;
+  margin: 0 5px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.pagination button:hover {
+  background-color: var(--accent1);
+}
+
+.pagination button:disabled {
+  background-color: #ddd;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-size: 1rem;
+  margin: 0 10px;
+  color: var(--primary);
+}
+
+/* === Stock History Page === */
+.stock-history-page {
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 0;
+}
+
+.page-title {
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* Reuse your .sales-table and .pagination styles */
+
+
+/* === Responsive Design (Tablets) === */
+@media (max-width: 768px) {
+  .sales-table th,
+  .sales-table td {
+    padding: 8px;
+    font-size: 0.95rem;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15px;
+  }
+
+  .pagination button {
+    padding: 6px 12px;
+  }
+
+  .pagination span {
+    font-size: 0.9rem;
+  }
+}
+
+/* === Extra Small Devices (Phones < 500px) === */
+@media (max-width: 500px) {
+  .sales-table th,
+  .sales-table td {
+    padding: 6px 4px;
+    font-size: 0.8rem;
+    word-break: break-word; /* prevent text overflow */
+  }
+
+  .sales-table th {
+    font-size: 0.85rem;
+  }
+
+  .pagination button {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+  }
+
+  .pagination span {
+    font-size: 0.85rem;
+  }
+}
