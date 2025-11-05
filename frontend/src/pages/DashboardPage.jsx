@@ -88,26 +88,24 @@ export default function DashboardPage() {
     fetchAll({ start, end });
   };
 
-  // New color palette for charts
-  const CHART_COLORS = ["#674F2D", "#9D825D", "#D2B48C", "#E4D5B4"];
-
   return (
     <div
       style={{
-        padding: 24,
         background: "var(--background)",
         minHeight: "100vh",
       }}
     >
+      {/* Header with Date Range Picker */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 24,
+          flexWrap: "wrap",
+          gap: "12px",
         }}
       >
-        <h3 style={{ color: "var(--primary)" }}>Dashboard</h3>
         <DateRangePicker
           onChange={onRangeChange}
           initialStart={range.start}
@@ -115,74 +113,51 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* KPI CARDS */}
+      {/* KPI Cards */}
       <section style={{ marginBottom: 24 }}>
         <KpiCards summary={summary} loading={loading.kpi} />
       </section>
 
-      {/* GRID LAYOUT */}
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr", // two equal columns
-          gap: 16,
-        }}
-      >
-        {/* Left column: Gross vs Net */}
-        <div
-          style={{
-            background: "var(--accent3)",
-            padding: 16,
-            borderRadius: 12,
-          }}
-        >
-          <h4 style={{ marginBottom: 12, color: "var(--primary)" }}>
-            Gross vs Net
-          </h4>
-          <GrossVsNetBar
-            data={grossNetSeries}
-            loading={loading.gross}
-            colors={CHART_COLORS}
-          />
+      {/* Charts Grid */}
+      <section className="charts-grid">
+        {/* Gross vs Net */}
+        <div className="chart-card">
+          <h4 className="chart-title">Gross vs Net</h4>
+          <GrossVsNetBar data={grossNetSeries} loading={loading.gross} />
         </div>
 
-        {/* Right column: Sales by Category */}
-        <div
-          style={{
-            background: "var(--accent3)",
-            padding: 16,
-            borderRadius: 12,
-          }}
-        >
-          <h4 style={{ marginBottom: 12, color: "var(--primary)" }}>
-            Sales by Category
-          </h4>
-          <CategoryPieChart
-            data={categories}
-            loading={loading.cat}
-            colors={CHART_COLORS}
-          />
+        {/* Sales by Category */}
+        <div className="chart-card">
+          <h4 className="chart-title">Sales by Category</h4>
+          <CategoryPieChart data={categories} loading={loading.cat} />
         </div>
 
-        {/* Bottom row: Sales Line Chart — spans full width */}
-        <div
-          style={{
-            gridColumn: "1 / -1", // span both columns
-            background: "var(--accent3)",
-            padding: 16,
-            borderRadius: 12,
-          }}
-        >
-          <h4 style={{ marginBottom: 12, color: "var(--primary)" }}>
-            Sales (Net vs Gross) — Daily
-          </h4>
-          <SalesLineChart
-            data={salesSeries}
-            loading={loading.sales}
-            colors={CHART_COLORS}
-          />
+        {/* Line Chart (Full width below the other two charts) */}
+        <div className="line-chart-card">
+          <h4 className="chart-title">Sales (Net vs Gross) — Daily</h4>
+          <SalesLineChart data={salesSeries} loading={loading.sales} />
         </div>
       </section>
     </div>
   );
 }
+
+// === Shared styles ===
+const chartCardStyle = {
+  background: "var(--accent3)",
+  padding: 16,
+  borderRadius: 12,
+  width: "100%",
+  height: "100%",
+  boxSizing: "border-box",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+};
+
+const chartTitleStyle = {
+  marginBottom: 12,
+  color: "var(--primary)",
+  fontSize: "16px",
+  fontWeight: 600,
+};

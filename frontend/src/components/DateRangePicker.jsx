@@ -16,64 +16,111 @@ export default function DateRangePicker({ onChange, initialStart, initialEnd }) 
   };
 
   return (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-      {/* Quick Select Buttons */}
-      <div>
-        <button
-          onClick={() => quick(7)}
-          style={{
-            background: 'var(--primary)',
-            color: '#fff',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s, transform 0.2s',
-          }}
-        >
-          7d
-        </button>
-        <button
-          onClick={() => quick(30)}
-          style={{
-            background: 'var(--primary)',
-            color: '#fff',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s, transform 0.2s',
-            marginLeft: '8px',
-          }}
-        >
-          30d
-        </button>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        width: '100%',
+        justifyContent: 'flex-start',
+      }}
+    >
+      {/* Quick Buttons */}
+      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <button onClick={() => quick(7)} style={buttonStyle}>7d</button>
+        <button onClick={() => quick(30)} style={buttonStyle}>30d</button>
       </div>
 
-      {/* Date Range Inputs */}
-      <div>
-        <label style={{ fontSize: '14px', color: 'var(--primary)' }}>
-          From <input type="date" value={start} onChange={(e) => setStart(e.target.value)} style={{ padding: '6px', borderRadius: '8px', border: '1px solid var(--accent2)', marginLeft: '8px' }} />
+      {/* Inputs + Apply */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '8px',
+          flexGrow: 1,
+          minWidth: '260px',
+        }}
+      >
+        <label style={labelStyle}>
+          From
+          <input
+            type="date"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            style={inputStyle}
+          />
         </label>
-        <label style={{ fontSize: '14px', color: 'var(--primary)', marginLeft: '8px' }}>
-          To <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} style={{ padding: '6px', borderRadius: '8px', border: '1px solid var(--accent2)', marginLeft: '8px' }} />
+
+        <label style={labelStyle}>
+          To
+          <input
+            type="date"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+            style={inputStyle}
+          />
         </label>
-        <button
-          onClick={apply}
-          style={{
-            background: 'var(--primary)',
-            color: '#fff',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s, transform 0.2s',
-            marginLeft: '8px',
-          }}
-        >
+
+        <button onClick={apply} style={buttonStyle}>
           Apply
         </button>
       </div>
+
+      {/* Responsive adjustments */}
+      <style>
+        {`
+          @media (max-width: 600px) {
+            div[style*="display: flex"][style*="align-items: center"] {
+              justify-content: space-between;
+              gap: 6px;
+            }
+
+            input[type="date"] {
+              width: 100px;
+            }
+
+            button {
+              padding: 5px 10px;
+            }
+
+            label {
+              font-size: 13px;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }
+
+// === Reusable Styles ===
+const buttonStyle = {
+  background: 'var(--primary)',
+  color: '#fff',
+  padding: '6px 12px',
+  borderRadius: '8px',
+  border: 'none',
+  cursor: 'pointer',
+  transition: 'background-color 0.3s, transform 0.2s',
+  whiteSpace: 'nowrap',
+};
+
+const inputStyle = {
+  padding: '6px',
+  borderRadius: '8px',
+  border: '1px solid var(--accent2)',
+  marginLeft: '8px',
+  minWidth: '120px',
+  maxWidth: '150px',
+  flexShrink: 0,
+};
+
+const labelStyle = {
+  fontSize: '14px',
+  color: 'var(--primary)',
+  display: 'flex',
+  alignItems: 'center',
+  whiteSpace: 'nowrap',
+};
