@@ -2,16 +2,12 @@
 const mongoose = require('mongoose');
 
 const expenseSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  amount: { type: Number, required: true, min: 0 },
-  category: {
-    type: String,
-    enum: ['Ingredients','Rent','Utilities','Packaging','Salaries','Other'],
-    default: 'Other'
-  },
-  date: { type: Date, default: Date.now },
-  notes: { type: String }
-}, { timestamps: true });
+  name: { type: String, required: true },
+  amount: { type: Number, required: true },
+  category: { type: String, default: 'Other' },
+  notes: { type: String },
+  date: { type: Date, default: Date.now }, // ✅ fixes the problem
+});
 
 // index for faster date-range aggregations
 expenseSchema.index({ date: 1 });

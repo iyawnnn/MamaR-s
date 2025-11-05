@@ -90,10 +90,6 @@ export default function App() {
               <i className="bi bi-cash-coin"></i>
               <span>Expenses</span>
             </Link>
-            <Link to="/reports" className="nav-link">
-              <i className="bi bi-graph-up"></i>
-              <span>Reports</span>
-            </Link>
           </nav>
 
           <button className="logout-btn" onClick={logout}>
@@ -162,14 +158,6 @@ export default function App() {
             element={
               <PrivateRoute>
                 <ExpensesPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/reports"
-            element={
-              <PrivateRoute>
-                <ReportsPage />
               </PrivateRoute>
             }
           />
