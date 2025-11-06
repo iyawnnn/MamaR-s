@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { formatDateISO } from "../utils/dateUtils";
-import "./DateRangePicker.css"; // 👈 we'll move responsive styles here
+import "./DateRangePicker.css";
 
 export default function DateRangePicker({ onChange, initialStart, initialEnd }) {
-  const [start, setStart] = useState(
-    initialStart || formatDateISO(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000))
-  );
-  const [end, setEnd] = useState(initialEnd || formatDateISO(new Date()));
+  // Default both to TODAY
+  const today = formatDateISO(new Date());
+  const [start, setStart] = useState(initialStart || today);
+  const [end, setEnd] = useState(initialEnd || today);
 
   const apply = () => onChange({ start, end });
 

@@ -10,13 +10,9 @@ import "./DashboardPage.css"; // 👈 make sure this CSS file exists
 
 export default function DashboardPage() {
   const [range, setRange] = useState(() => {
-    const end = new Date();
-    end.setHours(0, 0, 0, 0);
-    const start = new Date(end.getTime() - 6 * 24 * 60 * 60 * 1000);
-    return {
-      start: start.toISOString().slice(0, 10),
-      end: end.toISOString().slice(0, 10),
-    };
+    const today = new Date();
+    const isoToday = today.toISOString().split("T")[0]; // local-safe today
+    return { start: isoToday, end: isoToday };
   });
 
   const [summary, setSummary] = useState(null);
