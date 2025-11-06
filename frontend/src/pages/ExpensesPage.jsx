@@ -186,7 +186,7 @@ export default function ExpensesPage() {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Amount (₱)</th>
+                <th>Amount</th>
                 <th>Category</th>
                 <th>Notes</th>
               </tr>

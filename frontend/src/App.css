@@ -120,6 +120,24 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* === MAIN CONTENT === */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  transition: margin-left 0.3s ease; /* optional if desktop collapsible */
+}
+
+/* === APP CONTAINER === */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background-color: var(--background);
+  font-family: "Matter", sans-serif;
+  position: relative;
+}
+
 /* === MOBILE BEHAVIOR === */
 @media (max-width: 768px) {
   .sidebar {
@@ -131,12 +149,12 @@
   }
 
   .sidebar.open {
-    transform: translateX(0); /* smooth slide in */
+    transform: translateX(0); 
   }
 
   .main-content {
     width: 100%;
-    padding: 1rem;
+    padding: 1.25rem;
     transition: filter 0.3s ease;
   }
 
@@ -171,22 +189,4 @@
   .toggle-sidebar-btn i {
     font-size: 1.5rem;
   }
-}
-
-/* === MAIN CONTENT === */
-.main-content {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  transition: margin-left 0.3s ease; /* optional if desktop collapsible */
-}
-
-/* === APP CONTAINER === */
-.app-container {
-  display: flex;
-  height: 100vh;
-  width: 100%;
-  background-color: var(--background);
-  font-family: "Matter", sans-serif;
-  position: relative;
 }

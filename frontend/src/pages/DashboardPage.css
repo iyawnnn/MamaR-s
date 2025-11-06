@@ -1,24 +1,34 @@
-/* Add this CSS to an external CSS file, for example: DashboardPage.css */
+.dashboard-container {
+  background: var(--background);
+  min-height: 100vh;
+}
 
-/* Default grid layout for small screens */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dashboard-kpi {
+  margin-bottom: 24px;
+}
+
+/* === Charts Grid Layout === */
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Responsive grid */
+  grid-template-columns: 1fr 1fr; /* Always 2 charts in the top row */
   gap: 16px;
 }
 
-/* Force 2-column layout for large screens (above 1353px) */
-@media (min-width: 1353px) {
-  .charts-grid {
-    grid-template-columns: 1fr 1fr; /* Two equal-width columns on larger screens */
-  }
-
-  .line-chart-card {
-    grid-column: 1 / -1; /* Make the line chart span full width */
-  }
+/* The line chart always spans both columns */
+.full-width {
+  grid-column: 1 / -1;
 }
 
-/* Style for the charts (cards) */
+/* === Chart Card Style === */
 .chart-card {
   background: var(--accent3);
   padding: 16px;
@@ -38,15 +48,9 @@
   font-weight: 600;
 }
 
-.line-chart-card {
-  grid-column: 1 / -1; /* Always span full width below 1353px */
-  background: var(--accent3);
-  padding: 16px;
-  border-radius: 12px;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+/* Responsive: stack charts on smaller screens */
+@media (max-width: 900px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
 }

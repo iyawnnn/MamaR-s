@@ -6,6 +6,7 @@ import SalesLineChart from "../components/SalesLineChart";
 import GrossVsNetBar from "../components/GrossVsNetBar";
 import CategoryPieChart from "../components/CategoryPieChart";
 import { fillMissingDates } from "../utils/dateUtils";
+import "./DashboardPage.css"; // 👈 make sure this CSS file exists
 
 export default function DashboardPage() {
   const [range, setRange] = useState(() => {
@@ -89,23 +90,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <div
-      style={{
-        background: "var(--background)",
-        minHeight: "100vh",
-      }}
-    >
+    <div className="dashboard-container">
       {/* Header with Date Range Picker */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
+      <div className="dashboard-header">
         <DateRangePicker
           onChange={onRangeChange}
           initialStart={range.start}
@@ -114,26 +101,25 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <section style={{ marginBottom: 24 }}>
+      <section className="dashboard-kpi">
         <KpiCards summary={summary} loading={loading.kpi} />
       </section>
 
       {/* Charts Grid */}
       <section className="charts-grid">
-        {/* Gross vs Net */}
+        {/* Top 2 charts */}
         <div className="chart-card">
           <h4 className="chart-title">Gross vs Net</h4>
           <GrossVsNetBar data={grossNetSeries} loading={loading.gross} />
         </div>
 
-        {/* Sales by Category */}
         <div className="chart-card">
           <h4 className="chart-title">Sales by Category</h4>
           <CategoryPieChart data={categories} loading={loading.cat} />
         </div>
 
-        {/* Line Chart (Full width below the other two charts) */}
-        <div className="line-chart-card">
+        {/* Bottom full-width chart */}
+        <div className="chart-card full-width">
           <h4 className="chart-title">Sales (Net vs Gross) — Daily</h4>
           <SalesLineChart data={salesSeries} loading={loading.sales} />
         </div>
@@ -141,23 +127,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-// === Shared styles ===
-const chartCardStyle = {
-  background: "var(--accent3)",
-  padding: 16,
-  borderRadius: 12,
-  width: "100%",
-  height: "100%",
-  boxSizing: "border-box",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "space-between",
-};
-
-const chartTitleStyle = {
-  marginBottom: 12,
-  color: "var(--primary)",
-  fontSize: "16px",
-  fontWeight: 600,
-};
