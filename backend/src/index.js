@@ -37,6 +37,11 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/dashboard", dashboardRoutes); // ⬅️ add this new one
 app.use("/api/auth", authRoutes); // add this line
 
+// ✅ Keep-alive route for Render free tier
+app.get("/api/ping", (req, res) => {
+  res.json({ message: "Backend awake 🟢" });
+});
+
 // ✅ 404 fallback
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });

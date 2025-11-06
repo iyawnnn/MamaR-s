@@ -23,6 +23,13 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const location = useLocation(); // Get the current location to check route changes
 
+  // 🕒 Auto wake Render backend when site opens
+  useEffect(() => {
+    fetch("https://mamar-s.onrender.com/api/ping")
+      .then(() => console.log("✅ Backend pinged to wake up"))
+      .catch(() => console.log("⚠️ Could not reach backend"));
+  }, []);
+
   // Update isMobile and auto-close sidebar on resize
   useEffect(() => {
     const handleResize = () => {
