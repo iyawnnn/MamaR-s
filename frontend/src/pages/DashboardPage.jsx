@@ -6,35 +6,57 @@ import SalesLineChart from "../components/SalesLineChart";
 import GrossVsNetBar from "../components/GrossVsNetBar";
 import CategoryPieChart from "../components/CategoryPieChart";
 import { fillMissingDates } from "../utils/dateUtils";
-import "./DashboardPage.css"; // 👈 make sure this CSS file exists
+import "./DashboardPage.css";
+
+const EmptyState = ({ message = "No data available for this period" }) => (
+  <div className="empty-state-container">
+    <div className="empty-state-icon">
+      <i className="bi bi-bar-chart-line"></i>
+    </div>
+    <p className="empty-state-text">{message}</p>
+    <span className="empty-state-subtext">Try selecting a different date range.</span>
+  </div>
+);
 
 export default function DashboardPage() {
   const [range, setRange] = useState(() => {
-    const today = new Date();
-    const isoToday = today.toISOString().split("T")[0]; // local-safe today
-    return { start: isoToday, end: isoToday };
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 7);
+
+    const toLocalISO = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    return { start: toLocalISO(start), end: toLocalISO(end) };
   });
 
   const [summary, setSummary] = useState(null);
   const [salesSeries, setSalesSeries] = useState([]);
   const [grossNetSeries, setGrossNetSeries] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState({
-    kpi: false,
-    sales: false,
-    gross: false,
-    cat: false,
+  const [loading, setLoading] = useState(true);
+
+  // Date for Header
+  const todayDisplay = new Date().toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
   });
 
-  const formatShortDate = (isoDate) =>
-    new Date(isoDate).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+  const formatShortDate = (isoDate) => {
+    const [year, month, day] = isoDate.split('-');
+    const dateObj = new Date(year, month - 1, day);
+    return dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
 
   const fetchAll = useCallback(async ({ start, end }) => {
     try {
-      setLoading({ kpi: true, sales: true, gross: true, cat: true });
+      setLoading(true);
 
       const [kpiRes, salesRes, grossRes, catRes] = await Promise.all([
         axios.get("/reports/summary", { params: { start, end } }),
@@ -46,13 +68,17 @@ export default function DashboardPage() {
       setSummary(kpiRes.data);
 
       const sSeries = salesRes.data.series || [];
-      const filled = fillMissingDates(
-        sSeries,
-        salesRes.data.start,
-        salesRes.data.end,
-        ["net", "gross", "cogs", "discounts"]
-      ).map((d) => ({ ...d, date: formatShortDate(d.date) }));
-      setSalesSeries(filled);
+      if (sSeries.length > 0) {
+        const filled = fillMissingDates(
+          sSeries,
+          range.start,
+          range.end,
+          ["net", "gross", "cogs", "discounts"]
+        ).map((d) => ({ ...d, date: formatShortDate(d.date) }));
+        setSalesSeries(filled);
+      } else {
+        setSalesSeries([]);
+      }
 
       const gSeries = (grossRes.data.series || []).map((s) => ({
         period: s.period,
@@ -72,9 +98,9 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("❌ Failed to fetch dashboard data", err);
     } finally {
-      setLoading({ kpi: false, sales: false, gross: false, cat: false });
+      setLoading(false);
     }
-  }, []);
+  }, [range.start, range.end]);
 
   useEffect(() => {
     fetchAll(range);
@@ -82,43 +108,97 @@ export default function DashboardPage() {
 
   const onRangeChange = ({ start, end }) => {
     setRange({ start, end });
-    fetchAll({ start, end });
   };
+
+  if (loading && !summary) {
+    return (
+      <div className="dashboard-loading-screen">
+        <div className="spinner"></div>
+        <span>Gathering insights...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
-      {/* Header with Date Range Picker */}
-      <div className="dashboard-header">
-        <DateRangePicker
-          onChange={onRangeChange}
-          initialStart={range.start}
-          initialEnd={range.end}
-        />
-      </div>
+      {/* Header */}
+      <header className="dashboard-header">
+        <div className="header-content">
+          <div className="page-meta">
+            <span className="meta-date">
+              <i className="bi bi-calendar-event"></i>
+              {todayDisplay}
+            </span>
+          </div>
+        </div>
+        <div className="header-actions">
+          <DateRangePicker
+            onChange={onRangeChange}
+            initialStart={range.start}
+            initialEnd={range.end}
+          />
+        </div>
+      </header>
 
-      {/* KPI Cards */}
-      <section className="dashboard-kpi">
-        <KpiCards summary={summary} loading={loading.kpi} />
+      {/* KPI Cards Section */}
+      <section className="dashboard-section">
+        <KpiCards summary={summary} loading={loading} />
       </section>
 
-      {/* Charts Grid */}
-      <section className="charts-grid">
-        {/* Top 2 charts */}
-        <div className="chart-card">
-          <h4 className="chart-title">Gross vs Net</h4>
-          <GrossVsNetBar data={grossNetSeries} loading={loading.gross} />
-        </div>
-
-        <div className="chart-card">
-          <h4 className="chart-title">Sales by Category</h4>
-          <CategoryPieChart data={categories} loading={loading.cat} />
-        </div>
-
-        {/* Bottom full-width chart */}
+      {/* Analytics Grid */}
+      <section className="dashboard-charts-grid">
+        
+        {/* Full Width Sales Trend */}
         <div className="chart-card full-width">
-          <h4 className="chart-title">Sales (Net vs Gross) — Daily</h4>
-          <SalesLineChart data={salesSeries} loading={loading.sales} />
+          <div className="card-header">
+            <div>
+              <h3 className="card-title">Sales Trend</h3>
+              <span className="card-subtitle">Daily Net vs Gross Income</span>
+            </div>
+          </div>
+          <div className="chart-wrapper">
+            {salesSeries.length > 0 ? (
+              <SalesLineChart data={salesSeries} />
+            ) : (
+              <EmptyState message="No sales recorded for this period" />
+            )}
+          </div>
         </div>
+
+        {/* Revenue Breakdown */}
+        <div className="chart-card">
+          <div className="card-header">
+            <div>
+              <h3 className="card-title">Revenue Breakdown</h3>
+              <span className="card-subtitle">Profitability Analysis</span>
+            </div>
+          </div>
+          <div className="chart-wrapper">
+            {grossNetSeries.length > 0 ? (
+              <GrossVsNetBar data={grossNetSeries} />
+            ) : (
+              <EmptyState />
+            )}
+          </div>
+        </div>
+
+        {/* Category Share */}
+        <div className="chart-card">
+          <div className="card-header">
+            <div>
+              <h3 className="card-title">Category Share</h3>
+              <span className="card-subtitle">Top Performing Products</span>
+            </div>
+          </div>
+          <div className="chart-wrapper">
+            {categories.length > 0 ? (
+              <CategoryPieChart data={categories} />
+            ) : (
+              <EmptyState message="No category data found" />
+            )}
+          </div>
+        </div>
+
       </section>
     </div>
   );

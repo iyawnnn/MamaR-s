@@ -1,192 +1,130 @@
-/* === SIDEBAR === */
-.sidebar {
-  width: 250px;
-  background: var(--accent3);
-  color: var(--primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem 1rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
-  z-index: 1000; /* above overlay */
-  transform: translateX(0);
-  transition: transform 0.3s ease; /* smooth slide */
-}
-
-.sidebar.collapsed {
-  width: 70px;
-  padding: 1.5rem 0.5rem;
-}
-
-.sidebar-title {
-  font-family: "Cal Sans", sans-serif;
-  font-size: 1.4rem;
-  margin-bottom: 2rem;
-  transition: opacity 0.3s ease;
-}
-
-.sidebar.collapsed .sidebar-title {
-  opacity: 0;
-  visibility: hidden;
-}
-
-/* === NAV LINKS === */
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  color: var(--primary);
-  text-decoration: none;
-  font-size: 1rem;
-  transition: background 0.3s, color 0.3s, padding 0.3s;
-  position: relative;
-}
-
-.nav-link i {
-  font-size: 1.2rem;
-  opacity: 0.8;
-  min-width: 20px;
-  text-align: center;
-}
-
-.sidebar.collapsed .nav-link span {
-  display: none;
-}
-
-.nav-link:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.nav-link.active {
-  background-color: var(--primary);
-  color: #fff;
-}
-
-/* === LOGOUT BUTTON === */
-.logout-btn {
-  margin-top: auto;
-  background: transparent;
-  border: none;
-  color: var(--primary);
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  width: 100%;
-}
-
-.sidebar.collapsed .logout-btn span {
-  display: none;
-}
-
-.logout-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ff6b6b;
-}
-
-/* === TOGGLE BUTTON === */
-.toggle-btn {
-  position: absolute;
-  top: 1rem;
-  right: -1.5rem;
-  background: var(--accent3);
-  color: var(--primary);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  cursor: pointer;
-  width: 35px;
-  height: 35px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: background 0.3s;
-}
-
-.toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* === MAIN CONTENT === */
-.main-content {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  transition: margin-left 0.3s ease; /* optional if desktop collapsible */
-}
-
 /* === APP CONTAINER === */
 .app-container {
   display: flex;
   height: 100vh;
   width: 100%;
   background-color: var(--background);
-  font-family: "Matter", sans-serif;
+  overflow: hidden;
   position: relative;
+  flex-direction: column;
 }
 
-/* === MOBILE BEHAVIOR === */
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100%;
-    transform: translateX(-100%);
+/* === DESKTOP LAYOUT === */
+@media (min-width: 1025px) {
+  .app-container {
+    flex-direction: row;
   }
+}
 
-  .sidebar.open {
-    transform: translateX(0); 
-  }
+/* === MAIN CONTENT (Scroll Container) === */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 
-  .main-content {
-    width: 100%;
-    padding: 1.25rem;
-    transition: filter 0.3s ease;
-  }
+  /* Desktop Spacing: Matches sidebar width */
+  margin-left: 280px;
 
-  .sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 900; /* below sidebar */
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* FIXED: Removed the large 8rem gap. Set to standard 2rem. */
+  padding: 2rem;
+
+  transition: margin-left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* === PUBLIC LAYOUT === */
+.app-container.public-layout .main-content {
+  margin-left: 0 !important;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+}
+
+/* === MOBILE HEADER === */
+.mobile-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  z-index: 40;
+}
+
+.mobile-menu-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--text-main);
+}
+
+.mobile-brand i {
+  color: var(--primary);
+  font-size: 1.4rem;
+}
+
+.mobile-spacer {
+  width: 32px;
+}
+
+/* === OVERLAY === */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
     opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
   }
-
-  .sidebar-open .sidebar-overlay {
+  to {
     opacity: 1;
-    pointer-events: all;
+  }
+}
+
+/* === RESPONSIVE RULES === */
+
+/* Tablet & Small Laptop */
+@media (max-width: 1024px) {
+  .main-content {
+    margin-left: 0;
+    /* Standard padding for tablet */
+    padding: 1.5rem;
   }
 
-  .toggle-sidebar-btn {
-    background: var(--accent3);
-    color: var(--primary);
-    border: none;
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 1rem;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
+  .main-content.expanded {
+    margin-left: 0;
   }
+}
 
-  .toggle-sidebar-btn i {
-    font-size: 1.5rem;
+/* Mobile Phones */
+@media (max-width: 480px) {
+  .main-content {
+    /* Reduced padding for mobile to maximize space */
+    padding: 1rem;
   }
 }

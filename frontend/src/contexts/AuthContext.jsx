@@ -8,36 +8,54 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const initAuth = async () => {
+      const token = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
-    if (token) {
-      axios.setToken(token);
-      if (storedUser && storedUser !== "undefined") {
+      if (token && storedUser) {
         try {
-          setUser(JSON.parse(storedUser));
-        } catch {
-          setUser(null);
+          // 1. Set token immediately for any pending requests
+          axios.setToken(token);
+          
+          // 2. Parse user safely
+          const parsedUser = JSON.parse(storedUser);
+          if (parsedUser) {
+            setUser(parsedUser);
+          } else {
+            // Invalid user data, clear everything
+            logout();
+          }
+        } catch (error) {
+          console.error("Auth initialization error:", error);
+          logout();
         }
       } else {
-        setUser({}); // fallback if you want a "blank" user
+        // No token or user found
+        setLoading(false);
       }
-    }
+      setLoading(false);
+    };
 
-    setLoading(false);
+    initAuth();
   }, []);
 
   const login = async (credentials) => {
-    const res = await axios.post("/auth/login", credentials);
-    const token = res.data.token;
-    const user = res.data.user;
+    try {
+      const res = await axios.post("/auth/login", credentials);
+      const { token, user } = res.data;
 
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
+      if (!token || !user) throw new Error("Invalid response from server");
 
-    axios.setToken(token); // make sure axios instance has this method
-    setUser(user); // immediately update context
-    return res;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      axios.setToken(token);
+      setUser(user);
+      
+      return res;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
   };
 
   const logout = () => {
@@ -45,6 +63,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("user");
     axios.setToken(null);
     setUser(null);
+    // Optional: Redirect is handled by the UI consuming this context
   };
 
   return (

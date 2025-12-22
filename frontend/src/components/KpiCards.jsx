@@ -1,12 +1,9 @@
 import React from 'react';
+import './KpiCards.css';
 
 const currency = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-export default function KpiCards({ summary, loading }) {
-  if (loading) {
-    return <div>Loading KPIs…</div>;
-  }
-
+export default function KpiCards({ summary }) {
   const {
     grossSales = 0,
     netSales = 0,
@@ -15,36 +12,24 @@ export default function KpiCards({ summary, loading }) {
     netProfit = 0
   } = summary || {};
 
-  const card = (title, value) => (
-    <div
-      style={{
-        background: 'var(--accent3)',  // Consistent background color
-        color: 'var(--primary)',        // Consistent text color
-        padding: 16,
-        borderRadius: 8,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-        minWidth: 170,
-        transition: '0.3s transform',
-      }}
-    >
-      <div style={{ fontSize: 12, color: '#666' }}>{title}</div>
-      <div style={{ fontSize: 18, fontWeight: 700 }}>{currency.format(value)}</div>
+  const StatItem = ({ label, value, icon, color }) => (
+    <div className="stat-card">
+      <div className={`stat-icon ${color}`}>
+        <i className={`bi ${icon}`}></i>
+      </div>
+      <div className="stat-info">
+        <span className="stat-label">{label}</span>
+        <span className="stat-value">{currency.format(value)}</span>
+      </div>
     </div>
   );
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-        gap: 12,
-      }}
-    >
-      {card('Total Gross Sales', grossSales)}
-      {card('Net Sales', netSales)}
-      {card('Gross Profit', grossProfit)}
-      {card('Operating Expenses', operatingExpenses)}
-      {card('Net Profit', netProfit)}
+    <div className="kpi-grid">
+      <StatItem label="Gross Sales" value={grossSales} icon="bi-shop" color="gold" />
+      <StatItem label="Net Sales" value={netSales} icon="bi-wallet2" color="blue" />
+      <StatItem label="Expenses" value={operatingExpenses} icon="bi-receipt" color="red" />
+      <StatItem label="Net Profit" value={netProfit} icon="bi-pie-chart-fill" color="green" />
     </div>
   );
 }
