@@ -1,86 +1,66 @@
-import React from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import "bootstrap-icons/font/bootstrap-icons.css";
-import "./Sidebar.css";
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Package, 
+  ShoppingCart, 
+  ChefHat, 
+  Settings, 
+  LogOut 
+} from "lucide-react";
 
-// We accept isMobile and onClose as props now
-export default function Sidebar({ open, isMobile, onClose }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleLinkClick = () => {
-    // If we are on mobile, close sidebar when navigating
-    if (isMobile && onClose) {
-      onClose();
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.reload();
-  };
-
-  const navItems = [
-    { label: "Dashboard", to: "/dashboard", icon: "bi-speedometer2" },
-    { label: "Products", to: "/products", icon: "bi-box-seam" },
-    { label: "Sales", to: "/sales", icon: "bi-receipt" },
-    { label: "Inventory", to: "/stock-history", icon: "bi-clipboard-data" },
-    { label: "Expenses", to: "/expenses", icon: "bi-wallet2" },
-    { label: "Reports", to: "/reports", icon: "bi-pie-chart" },
+const Sidebar = () => {
+  const menuItems = [
+    { name: "Dashboard", icon: LayoutDashboard, path: "/" },
+    { name: "Inventory", icon: Package, path: "/inventory" },
+    { name: "Orders", icon: ShoppingCart, path: "/orders" },
+    { name: "Recipes", icon: ChefHat, path: "/recipes" },
+    { name: "Settings", icon: Settings, path: "/settings" },
   ];
 
-  const isActive = (path) => location.pathname === path;
-
   return (
-    <aside className={`sidebar ${open ? "open" : "collapsed"}`}>
-      {/* === BRANDING === */}
-      <div className="sidebar-header">
-        <div className="logo-container">
-          <i className="bi bi-shop-window"></i>
-        </div>
-        <div className="brand-info">
-          <span className="brand-name">Mama R's</span>
-          <span className="brand-tagline">Admin Panel</span>
-        </div>
-        
-        {/* Mobile Close Button (X) */}
-        {isMobile && (
-          <button className="mobile-close-btn" onClick={onClose}>
-            <i className="bi bi-x-lg"></i>
-          </button>
-        )}
+    <aside className="w-64 bg-white border-r border-stone-200 h-screen flex flex-col fixed left-0 top-0 z-10">
+      {/* Logo Section */}
+      <div className="p-6 border-b border-stone-100">
+        <h1 className="text-2xl font-bold text-stone-800 flex items-center gap-2">
+          <span className="text-orange-600">🍞</span> BakeryOS
+        </h1>
       </div>
 
-      {/* === NAVIGATION === */}
-      <nav className="nav-section">
-        <p className="nav-category">Menu</p>
-        <ul className="nav-list">
-          {navItems.map((item) => (
-            <li key={item.label}>
-              <Link 
-                to={item.to} 
-                className={`nav-link ${isActive(item.to) ? 'active' : ''}`}
-                onClick={handleLinkClick} // Trigger close on mobile
-              >
-                <span className="icon-box">
-                  <i className={`bi ${item.icon}`}></i>
-                </span>
-                <span className="link-text">{item.label}</span>
-                {isActive(item.to) && <span className="active-dot"></span>}
-              </Link>
-            </li>
-          ))}
-        </ul>
+      {/* Navigation Links */}
+      <nav className="flex-1 p-4 space-y-1">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+              }`
+            }
+          >
+            {/* We can use a render function or conditional styling for the icon color */}
+            {({ isActive }) => (
+              <>
+                <item.icon className={`w-5 h-5 ${isActive ? "text-orange-600" : "text-stone-400"}`} />
+                {item.name}
+              </>
+            )}
+          </NavLink>
+        ))}
       </nav>
 
-      {/* === FOOTER === */}
-      <div className="sidebar-footer">
-        <button className="footer-link logout" onClick={logout} title="Log Out">
-          <i className="bi bi-box-arrow-right"></i>
-          <span className="footer-text">Sign Out</span>
+      {/* Footer / Logout */}
+      <div className="p-4 border-t border-stone-100">
+        <button className="flex items-center gap-3 px-4 py-3 w-full text-left rounded-lg text-sm font-medium text-stone-600 hover:bg-red-50 hover:text-red-600 transition-colors">
+          <LogOut className="w-5 h-5" />
+          Sign Out
         </button>
       </div>
     </aside>
   );
-}
+};
+
+export default Sidebar;

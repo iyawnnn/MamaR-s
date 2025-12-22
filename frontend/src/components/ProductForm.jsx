@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import axios from '../api/axios';
-import "bootstrap-icons/font/bootstrap-icons.css";
-import { Save, X } from 'react-bootstrap-icons';  // Importing Bootstrap Icons
 
 export default function ProductForm({ product, onClose }) {
   const [form, setForm] = useState({

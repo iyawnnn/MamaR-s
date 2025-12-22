@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "../api/axios";
-import "./SalesForm.css";
 
 export default function SalesForm({ onSaleRecorded }) {
   const [products, setProducts] = useState([]);

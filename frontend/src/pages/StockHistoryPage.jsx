@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../api/axios';
 import dayjs from 'dayjs';
-import './SalesRecord.css';
 
 export default function StockHistoryPage() {
   const [logs, setLogs] = useState([]);
