@@ -1,139 +1,198 @@
-import React, { useState, useEffect } from "react";
-import axios from "../api/axios";
+import React, { useState, useEffect } from 'react';
+import axios from '../api/axios';
+import { ShoppingCart, Plus, Loader2, User, DollarSign, Calendar, Package, Layers, Hash } from 'lucide-react';
 
 export default function SalesForm({ onSaleRecorded }) {
   const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState("");
-  const [quantity, setQuantity] = useState(1);
-  const [customerName, setCustomerName] = useState("");
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [manualPrice, setManualPrice] = useState(false);
-  const [processing, setProcessing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Fetch products on mount
+  // Form State
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [customerName, setCustomerName] = useState('');
+  const [price, setPrice] = useState(''); 
+  const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
+
   useEffect(() => {
-    axios
-      .get("/products")
-      .then((res) => setProducts(res.data))
-      .catch((err) => console.error("Failed to load products", err));
+    const loadProducts = async () => {
+      try {
+        const res = await axios.get('/products');
+        setProducts(res.data.products || res.data || []);
+      } catch (err) {
+        console.error("Error loading products", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProducts();
   }, []);
 
-  // Auto-calculate price when selected product or quantity changes
+  // Auto-fill Price when Product/Size changes
   useEffect(() => {
-    const product = products.find((p) => p._id === selectedProduct);
-    if (product && !manualPrice) {
-      const newTotal = product.sellingPrice * quantity;
-      setTotalPrice(isNaN(newTotal) ? 0 : newTotal);
+    if (!selectedProduct) {
+      setPrice('');
+      return;
     }
-  }, [selectedProduct, quantity, products, manualPrice]);
+    if (selectedProduct.hasVariants && selectedVariant) {
+      const variant = selectedProduct.variants.find(v => v.name === selectedVariant);
+      if (variant) setPrice(variant.price);
+    } else if (!selectedProduct.hasVariants) {
+      setPrice(selectedProduct.sellingPrice);
+    }
+  }, [selectedProduct, selectedVariant]);
 
-  // Handle sale submission
-  const handleSale = async () => {
-    if (!selectedProduct) return alert("Please select a product");
-    if (!customerName.trim()) return alert("Enter customer name");
-    if (quantity <= 0) return alert("Quantity must be greater than 0");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedProduct) return;
+    
+    if (selectedProduct.hasVariants && !selectedVariant) {
+      alert("Please select a size for this product.");
+      return;
+    }
 
-    setProcessing(true);
-
+    setSubmitting(true);
     try {
-      await axios.post("/sales", {
-        productId: selectedProduct,
+      const payload = {
+        productId: selectedProduct._id,
         quantity: Number(quantity),
-        customerName,
-        totalPrice: Number(totalPrice),
-      });
+        customerName: customerName || 'Walk-in',
+        variantName: selectedVariant || undefined,
+        customPrice: Number(price),
+        date: saleDate
+      };
 
-      alert("✅ Sale recorded successfully!");
-
-      // Notify parent (SalesPage) to refresh sales list
-      if (onSaleRecorded) onSaleRecorded();
-
-      // Refresh product list (update stocks)
-      const res = await axios.get("/products");
-      setProducts(res.data);
-
-      // Reset fields
-      setCustomerName("");
-      setSelectedProduct("");
+      await axios.post('/sales', payload);
+      
       setQuantity(1);
-      setTotalPrice(0);
-      setManualPrice(false);
+      setCustomerName('');
+      setSelectedProduct(null);
+      setSelectedVariant(null);
+      setPrice('');
+      
+      if (onSaleRecorded) onSaleRecorded(); 
     } catch (err) {
-      alert(err?.response?.data?.message || "❌ Failed to record sale.");
+      alert(err.response?.data?.message || 'Sale failed');
     } finally {
-      setProcessing(false);
+      setSubmitting(false);
     }
   };
 
+  const totalAmount = (Number(price) || 0) * (Number(quantity) || 1);
+  const inputClass = "w-full h-12 px-3 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium text-stone-800 text-sm appearance-none";
+
+  if (loading) return <div className="p-4 text-center text-stone-400">Loading products...</div>;
+
   return (
-    <div className="sales-form-container">
-      <div className="sales-input-container">
-        <label>Customer Name</label>
-        <input
-          type="text"
-          placeholder="Enter customer name"
-          value={customerName}
-          onChange={(e) => setCustomerName(e.target.value)}
-          className="sales-input"
-        />
-      </div>
-
-      <div className="sales-input-container">
-        <label>Product</label>
-        <select
-          value={selectedProduct}
-          onChange={(e) => {
-            setSelectedProduct(e.target.value);
-            setManualPrice(false);
-          }}
-          className="sales-input"
-        >
-          <option value="">Select Product</option>
-          {products.map((p) => (
-            <option value={p._id} key={p._id}>
-              {p.name} - ₱{Number(p.sellingPrice).toFixed(2)} (Stock: {p.stock})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Grouped Quantity and Total Price in a single row */}
-      <div className="sales-input-row">
-        <div className="sales-input-container">
-          <label>Quantity</label>
-          <input
-            type="number"
-            min="1"
-            placeholder="Quantity"
-            value={quantity}
-            onChange={(e) => {
-              setQuantity(Number(e.target.value));
-              setManualPrice(false);
-            }}
-            className="sales-input"
-          />
+    <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm mb-8 animate-fade-in">
+      <div className="flex items-center gap-2 mb-6 border-b border-stone-100 pb-4">
+        <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
+          <ShoppingCart size={20} />
         </div>
-
-        <div className="sales-input-container">
-          <label>Total Price (₱)</label>
-          <input
-            type="number"
-            value={totalPrice}
-            onChange={(e) => {
-              setTotalPrice(Number(e.target.value));
-              setManualPrice(true);
-            }}
-            placeholder="Total Price (₱)"
-            className="sales-input"
-          />
+        <div>
+          <h3 className="text-lg font-bold text-stone-800 leading-none">New Transaction</h3>
+          <p className="text-xs text-stone-400 mt-1">Record a sale manually</p>
         </div>
       </div>
 
-      <div style={{ marginTop: 12 }}>
-        <button onClick={handleSale} disabled={processing} className="sales-button">
-          {processing ? "Processing..." : "Record Sale"}
-        </button>
-      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          {/* 1. Date */}
+          <div>
+            <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
+              <Calendar size={12} /> Date
+            </label>
+            <input type="date" required className={inputClass} value={saleDate} onChange={e => setSaleDate(e.target.value)} />
+          </div>
+
+          {/* 2. Customer */}
+          <div>
+            <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
+              <User size={12} /> Customer
+            </label>
+            <input type="text" placeholder="John Doe" className={inputClass} value={customerName} onChange={e => setCustomerName(e.target.value)} />
+          </div>
+
+          {/* 3. Product - FORMATTED DROPDOWN */}
+          <div className="relative">
+            <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
+              <Package size={12} /> Product
+            </label>
+            <select 
+              className={inputClass} 
+              value={selectedProduct?._id || ''} 
+              onChange={(e) => {
+                const prod = products.find(p => p._id === e.target.value);
+                setSelectedProduct(prod);
+                setSelectedVariant(null);
+              }} 
+              required
+            >
+              <option value="" disabled>Select a product</option>
+              {products.map(p => (
+                <option key={p._id} value={p._id}>
+                  {p.name} {p.hasVariants ? '(Sizes Available)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Size */}
+          <div>
+            <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
+              <Layers size={12} /> Size / Variant
+            </label>
+            <select 
+              className={`${inputClass} ${selectedProduct?.hasVariants ? 'bg-amber-50 border-amber-200 text-stone-900 font-bold' : 'opacity-50'}`} 
+              value={selectedVariant || ''} 
+              onChange={(e) => setSelectedVariant(e.target.value)} 
+              disabled={!selectedProduct?.hasVariants}
+            >
+              <option value="" disabled>{selectedProduct?.hasVariants ? "Choose a size" : "Standard Size"}</option>
+              {selectedProduct?.variants.map((v, idx) => (
+                <option key={idx} value={v.name}>{v.name} (Stock: {v.stock})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 5. Unit Price */}
+          <div>
+            <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
+               <DollarSign size={12} /> Unit Price (₱)
+            </label>
+            <input type="number" step="0.01" required className={`${inputClass} font-bold text-emerald-700`} value={price} onChange={e => setPrice(e.target.value)} />
+          </div>
+
+          {/* 6. Quantity */}
+          <div>
+            <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
+              <Hash size={12} /> Quantity
+            </label>
+            <div className="flex items-center h-12">
+              <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-full px-4 bg-stone-100 rounded-l-xl border border-r-0 border-stone-200 hover:bg-stone-200 font-bold">-</button>
+              <input type="number" min="1" required className="w-full h-full text-center border-y border-stone-200 outline-none font-bold bg-white" value={quantity} onChange={e => setQuantity(Number(e.target.value))} />
+              <button type="button" onClick={() => setQuantity(quantity + 1)} className="h-full px-4 bg-stone-100 rounded-r-xl border border-l-0 border-stone-200 hover:bg-stone-200 font-bold">+</button>
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER: Total & Action */}
+        <div className="mt-8 pt-6 border-t border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+             <div className="text-right">
+                <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider">Total Payable</span>
+                <span className="block text-3xl font-bold text-stone-800">₱{totalAmount.toLocaleString()}</span>
+             </div>
+          </div>
+          
+          <button type="submit" disabled={submitting || !selectedProduct} className="w-full md:w-auto px-8 py-3 bg-stone-900 text-white rounded-xl font-bold hover:bg-stone-800 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
+            {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : <Plus size={20} />}
+            Confirm Sale
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -1,2 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+}
+
+/* Apply base styles */
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-stone-100; /* Ensure background is set globally */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif; /* Use the fancier font for headers */
+}
+
+/* Force pointer cursor on all clickable elements */
+button, 
+select, 
+a, 
+input[type="checkbox"], 
+input[type="radio"], 
+input[type="submit"], 
+input[type="button"] {
+  cursor: pointer !important;
+}
+
+/* If you have divs or spans acting as buttons with 'onClick' */
+[role="button"], 
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* Ensure disabled buttons don't show the pointer */
+button:disabled {
+  cursor: not-allowed !important;
+}

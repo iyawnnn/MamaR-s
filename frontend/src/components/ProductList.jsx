@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "../api/axios";
+import { 
+  Plus, Edit3, Trash2, RefreshCcw, 
+  AlertTriangle, Layers 
+} from "lucide-react";
 import ProductForm from "./ProductForm";
 import RestockModal from "./RestockModal";
-import LowStockAlert from "./LowStockAlert";
 
 export default function ProductList() {
   const [products, setProducts] = useState([]);
@@ -17,10 +20,10 @@ export default function ProductList() {
     try {
       setLoading(true);
       const res = await axios.get("/products");
-      setProducts(res.data);
+      // Backend returns { products: [...] }
+      setProducts(res.data.products || res.data || []);
     } catch (err) {
       console.error("fetch products", err);
-      alert("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -28,8 +31,6 @@ export default function ProductList() {
 
   useEffect(() => {
     fetchProducts();
-    const t = setInterval(fetchProducts, 5000);
-    return () => clearInterval(t);
   }, [fetchProducts]);
 
   const handleDelete = async () => {
@@ -43,305 +44,146 @@ export default function ProductList() {
   };
 
   return (
-    <div style={containerStyle}>
-      {/* HEADER */}
-      <div style={headerStyle}>
-        <h2 style={{ color: "var(--primary)" }}>Products</h2>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header - SEARCH BAR REMOVED */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+        <div>
+          <h2 className="text-3xl font-bold text-stone-800 font-display">Inventory</h2>
+          <p className="text-stone-500 mt-1">Manage stock, prices, and product variants.</p>
+        </div>
         <button
-          onClick={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
-          style={addBtnStyle}
+          onClick={() => { setEditing(null); setShowForm(true); }}
+          className="flex items-center gap-2 bg-amber-500 text-stone-900 px-6 py-3 rounded-xl hover:bg-amber-400 transition-all font-bold shadow-lg shadow-amber-500/20 active:scale-95"
         >
-          <i className="bi bi-plus-circle" style={{ marginRight: "8px" }}></i>
+          <Plus className="w-5 h-5" />
           Add Product
         </button>
       </div>
 
-      {/* LOW STOCK ALERT */}
-      <LowStockAlert items={products.filter((p) => p.lowStock)} />
-
-      {/* PRODUCT CARDS */}
+      {/* BIG CARDS GRID */}
       {loading ? (
-        <p>Loading…</p>
+        <div className="text-center py-20 text-stone-400">Loading inventory...</div>
       ) : (
-        <div style={cardsContainerStyle}>
-          {products.map((p) => (
-            <div key={p._id} style={cardStyle} className="product-card">
-              <div style={cardHeaderStyle}>
-                <h3 style={{ color: "var(--primary)", fontSize: "1rem" }}>
-                  {p.name}
-                </h3>
-                {p.lowStock && (
-                  <span style={lowStockBadgeStyle}>Low Stock</span>
-                )}
-              </div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {products.map((p) => {
+            const isLowStock = p.lowStock;
 
-              <div style={cardInfoStyle}>
-                <div>
-                  <strong>Category:</strong> {p.category}
+            return (
+              <div key={p._id} className={`bg-white rounded-2xl border-2 ${isLowStock ? 'border-red-100 shadow-red-50' : 'border-stone-100'} shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col`}>
+                
+                {/* Card Header */}
+                <div className="p-6 border-b border-stone-100 bg-stone-50/50 flex justify-between items-start">
+                  <div>
+                    <h3 className="text-2xl font-bold text-stone-800 font-display">{p.name}</h3>
+                    <div className="flex gap-2 mt-2">
+                       {p.hasVariants ? (
+                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider">
+                           <Layers className="w-3 h-3" /> {p.variants.length} Sizes
+                         </span>
+                       ) : (
+                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-stone-100 text-stone-600 text-xs font-bold uppercase tracking-wider">
+                           Single Item
+                         </span>
+                       )}
+                       {isLowStock && (
+                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-100 text-red-700 text-xs font-bold uppercase tracking-wider">
+                           <AlertTriangle className="w-3 h-3" /> Low Stock
+                         </span>
+                       )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider">Total Stock</span>
+                    <span className={`text-3xl font-bold ${isLowStock ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {p.stock}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <strong>Price:</strong> ₱{Number(p.sellingPrice).toFixed(2)}
+
+                {/* Card Body: Pricing & Variants */}
+                <div className="p-6 flex-1">
+                  {p.hasVariants ? (
+                    <div className="bg-stone-50 rounded-xl border border-stone-200 overflow-hidden">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-stone-100 text-stone-500 uppercase text-xs font-bold">
+                          <tr>
+                            <th className="px-4 py-2">Size</th>
+                            <th className="px-4 py-2">Price</th>
+                            <th className="px-4 py-2 text-right">Stock</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-200">
+                          {p.variants.map((v, i) => (
+                            <tr key={i} className={v.stock <= (v.lowStockThreshold || 5) ? "bg-red-50" : ""}>
+                              <td className="px-4 py-3 font-medium text-stone-800">{v.name}</td>
+                              <td className="px-4 py-3 text-stone-600">₱{v.price}</td>
+                              <td className={`px-4 py-3 text-right font-bold ${v.stock <= (v.lowStockThreshold || 5) ? "text-red-600" : "text-emerald-600"}`}>
+                                {v.stock}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between bg-stone-50 p-4 rounded-xl border border-stone-200">
+                      <div>
+                        <p className="text-xs font-bold text-stone-400 uppercase">Selling Price</p>
+                        <p className="text-2xl font-bold text-amber-600">₱{p.sellingPrice.toFixed(2)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-stone-400 uppercase">Alert Level</p>
+                        <p className="text-lg font-bold text-stone-700">&lt; {p.lowStockThreshold}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <strong>Stock:</strong> {p.stock}
+
+                {/* Card Actions */}
+                <div className="p-4 bg-stone-50 border-t border-stone-100 grid grid-cols-3 gap-3">
+                  <button 
+                    onClick={() => setRestockTarget(p)} 
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white border border-stone-200 text-stone-600 font-bold text-sm hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm"
+                  >
+                    <RefreshCcw className="w-4 h-4" /> Restock
+                  </button>
+                  <button 
+                    onClick={() => { setEditing(p); setShowForm(true); }} 
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white border border-stone-200 text-stone-600 font-bold text-sm hover:border-amber-500 hover:text-amber-600 transition-all shadow-sm"
+                  >
+                    <Edit3 className="w-4 h-4" /> Edit
+                  </button>
+                  <button 
+                    onClick={() => { setProductToDelete(p); setShowDeleteModal(true); }} 
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white border border-stone-200 text-stone-600 font-bold text-sm hover:border-red-500 hover:text-red-600 transition-all shadow-sm"
+                  >
+                    <Trash2 className="w-4 h-4" /> Delete
+                  </button>
                 </div>
+
               </div>
-
-              <div style={actionsContainerStyle} className="product-actions">
-                <button
-                  onClick={() => {
-                    setEditing(p);
-                    setShowForm(true);
-                  }}
-                  style={actionBtnStyle}
-                >
-                  <i className="bi bi-pencil-square"></i> Edit
-                </button>
-
-                <button
-                  onClick={() => setRestockTarget(p)}
-                  style={actionBtnStyle}
-                >
-                  <i className="bi bi-arrow-repeat"></i> Restock
-                </button>
-
-                <button
-                  onClick={() => {
-                    setProductToDelete(p);
-                    setShowDeleteModal(true);
-                  }}
-                  style={deleteBtnStyle}
-                >
-                  <i className="bi bi-trash"></i> Delete
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* MODALS */}
-      {showForm && (
-        <ProductForm
-          product={editing}
-          onClose={() => {
-            setShowForm(false);
-            fetchProducts();
-          }}
-        />
-      )}
-
-      {restockTarget && (
-        <RestockModal
-          product={restockTarget}
-          onClose={() => {
-            setRestockTarget(null);
-            fetchProducts();
-          }}
-        />
-      )}
-
+      {/* --- Modals --- */}
+      {showForm && <ProductForm product={editing} onClose={() => { setShowForm(false); fetchProducts(); }} />}
+      {restockTarget && <RestockModal product={restockTarget} onClose={() => { setRestockTarget(null); fetchProducts(); }} />}
+      
       {showDeleteModal && (
-        <div style={modalBackdropStyle}>
-          <div style={modalStyle} className="modal-box">
-            <h3 style={modalHeaderStyle}>
-              Are you sure you want to delete this product?
-            </h3>
-            <p style={{ textAlign: "center" }}>This action cannot be undone.</p>
-            <div style={buttonsContainerStyle}>
-              <button onClick={handleDelete} style={confirmBtnStyle}>
-                Yes, Delete
-              </button>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                style={cancelBtnStyle}
-              >
-                Cancel
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm text-center">
+            <h3 className="text-lg font-bold text-stone-800 mb-2">Delete Product?</h3>
+            <p className="text-stone-500 text-sm mb-6">Are you sure? This cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 border border-stone-200 rounded-xl font-bold text-stone-600">Cancel</button>
+              <button onClick={handleDelete} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700">Delete</button>
             </div>
           </div>
         </div>
       )}
-
-      {/* RESPONSIVE FIXES */}
-      <style>
-        {`
-          @media (max-width: 600px) {
-            h2 {
-              font-size: 18px;
-            }
-            .product-card {
-              padding: 14px !important;
-            }
-            button {
-              font-size: 13px !important;
-              padding: 6px 10px !important;
-            }
-            .product-actions {
-              flex-direction: column !important;
-              gap: 8px !important;
-            }
-            .modal-box {
-              width: 90% !important;
-            }
-          }
-        `}
-      </style>
     </div>
   );
 }
-
-/* === BASE STYLES === */
-const containerStyle = {
-  padding: "24px",
-  background: "var(--background)",
-  minHeight: "100vh",
-};
-
-const headerStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  flexWrap: "wrap",
-  gap: "12px",
-};
-
-const addBtnStyle = {
-  background: "var(--primary)",
-  color: "#fff",
-  padding: "10px 20px",
-  border: "none",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontSize: "14px",
-  display: "flex",
-  alignItems: "center",
-  transition: "background-color 0.3s ease",
-};
-
-const cardsContainerStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-  gap: "16px",
-  marginTop: "20px",
-};
-
-const cardStyle = {
-  background: "var(--accent3)",
-  padding: "20px",
-  borderRadius: "8px",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "space-between",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-};
-
-const cardHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const lowStockBadgeStyle = {
-  backgroundColor: "var(--danger-light, #ffe6e6)",
-  color: "var(--danger, #e74c3c)",
-  padding: "4px 8px",
-  borderRadius: "4px",
-  fontSize: "12px",
-};
-
-const cardInfoStyle = {
-  marginTop: "14px",
-  fontSize: "14px",
-  color: "var(--text-dark)",
-  lineHeight: "1.5",
-};
-
-const actionsContainerStyle = {
-  marginTop: "16px",
-  display: "flex",
-  gap: "8px",
-  justifyContent: "space-between",
-  flexWrap: "wrap",
-};
-
-const actionBtnStyle = {
-  background: "var(--primary, #3498db)",
-  color: "#fff",
-  border: "none",
-  padding: "8px 14px",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontSize: "14px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "6px",
-  flexGrow: 1,
-  transition: "background-color 0.3s ease, transform 0.1s ease",
-};
-
-const deleteBtnStyle = {
-  ...actionBtnStyle,
-  background: "var(--danger, #e74c3c)",
-};
-
-const modalBackdropStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: "rgba(0,0,0,0.5)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 1000,
-};
-
-const modalStyle = {
-  background: "var(--accent3, #2c2c2c)",
-  padding: "24px",
-  borderRadius: "10px",
-  width: "400px",
-  boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-  textAlign: "center",
-};
-
-const modalHeaderStyle = {
-  fontSize: "18px",
-  fontWeight: "600",
-  color: "var(--primary, #3498db)",
-};
-
-const buttonsContainerStyle = {
-  marginTop: "16px",
-  display: "flex",
-  gap: "12px",
-  flexWrap: "wrap",
-};
-
-const confirmBtnStyle = {
-  background: "var(--danger, #e74c3c)",
-  color: "#fff",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "8px",
-  cursor: "pointer",
-  flexGrow: 1,
-  transition: "background-color 0.3s ease",
-};
-
-const cancelBtnStyle = {
-  background: "var(--primary, #3498db)",
-  color: "#fff",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "8px",
-  cursor: "pointer",
-  flexGrow: 1,
-  transition: "background-color 0.3s ease",
-};

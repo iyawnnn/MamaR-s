@@ -1,9 +1,8 @@
-// backend/routes/reportRoutes.js
 const express = require('express');
 const router = express.Router();
-const { summary } = require('../controllers/reportController');
+const reportController = require('../controllers/reportController');
 
-// GET /api/reports/summary?start=YYYY-MM-DD&end=YYYY-MM-DD
-router.get('/summary', /* verifyToken, */ summary);
+router.get('/dashboard-stats', reportController.getDashboardStats);
+router.get('/sales-chart', reportController.getSalesOverTime);
 
 module.exports = router;

@@ -1,39 +1,31 @@
-const Product = require('../models/Product');
-const StockLog = require('../models/StockLog');
+// Import the model FROM THE CONTROLLER
+const { Model: Product } = require('../controllers/productController');
 
-async function decreaseStock(productId, quantity, actionRef) {
+exports.increaseStock = async (productId, amount) => {
   const product = await Product.findById(productId);
   if (!product) throw new Error('Product not found');
-  if (product.stock < quantity) throw new Error('Insufficient stock');
-
-  product.stock -= quantity;
+  
+  // Simple logic for now
+  product.stock += amount; 
   await product.save();
-
-  await StockLog.create({
-    productId,
-    change: -quantity,
-    reason: 'Sale',
-    reference: actionRef
-  });
-
   return product;
-}
+};
 
-async function increaseStock(productId, quantity, reason, actionRef) {
+exports.decreaseStock = async (productId, amount, variantName = null) => {
   const product = await Product.findById(productId);
   if (!product) throw new Error('Product not found');
 
-  product.stock += quantity;
+  if (product.hasVariants) {
+    if (!variantName) throw new Error('Size required');
+    const v = product.variants.find(v => v.name === variantName);
+    if (!v) throw new Error('Size not found');
+    if (v.stock < amount) throw new Error('Low stock');
+    v.stock -= amount;
+  } else {
+    if (product.stock < amount) throw new Error('Low stock');
+    product.stock -= amount;
+  }
+  
   await product.save();
-
-  await StockLog.create({
-    productId,
-    change: quantity,
-    reason,
-    reference: actionRef
-  });
-
   return product;
-}
-
-module.exports = { decreaseStock, increaseStock };
+};

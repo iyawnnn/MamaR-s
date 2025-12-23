@@ -1,126 +1,212 @@
-// backend/src/controllers/productController.js
-const Product = require('../models/Product');
-const { increaseStock } = require('../utils/inventoryUtils');
+const Product = require("../models/InventoryItem");
+const StockLog = require("../models/StockLog");
 
-// Helper: standard error handler
+// Helper for errors
 const handleError = (res, err) => {
-  console.error(err);
-  if (err.name === 'ValidationError') {
+  console.error("Controller Error:", err);
+  if (err.name === "ValidationError") {
     return res.status(400).json({ message: err.message, errors: err.errors });
   }
   if (err.code === 11000) {
-    return res.status(400).json({ message: 'Product name must be unique' });
+    return res.status(400).json({ message: "Product name must be unique" });
   }
-  return res.status(500).json({ message: 'Server error' });
+  return res.status(500).json({ message: "Server error" });
 };
 
+// 1. Get All Products
 exports.getProducts = async (req, res) => {
   try {
-    const { search, category, sort = '-dateAdded' } = req.query;
+    const { search, sort = "-dateAdded" } = req.query;
     const q = { archived: false };
-    if (category) q.category = category;
-    if (search) q.name = { $regex: search, $options: 'i' };
+    if (search) q.name = { $regex: search, $options: "i" };
 
     const products = await Product.find(q).sort(sort);
-    const enriched = products.map(p => {
-      const stockValue = +(p.stock * p.costPrice).toFixed(2);
-      const lowStock = p.stock < p.lowStockThreshold;
-      return { ...p.toObject(), stockValue, lowStock };
+
+    const enriched = products.map((p) => {
+      let totalStock = p.stock;
+      let isLowStock = false;
+
+      if (p.hasVariants && p.variants.length > 0) {
+        totalStock = p.variants.reduce((acc, v) => acc + (v.stock || 0), 0);
+        isLowStock = p.variants.some(
+          (v) => v.stock <= (v.lowStockThreshold || 5)
+        );
+      } else {
+        isLowStock = p.stock < p.lowStockThreshold;
+      }
+
+      return { ...p.toObject(), stock: totalStock, lowStock: isLowStock };
     });
-    res.json(enriched);
+
+    res.json({ products: enriched });
   } catch (err) {
     handleError(res, err);
   }
 };
 
+// 2. Get Single Product
 exports.getProduct = async (req, res) => {
   try {
     const p = await Product.findById(req.params.id);
-    if (!p || p.archived) return res.status(404).json({ message: 'Product not found' });
-    const stockValue = +(p.stock * p.costPrice).toFixed(2);
-    const lowStock = p.stock < p.lowStockThreshold;
-    res.json({ ...p.toObject(), stockValue, lowStock });
+    if (!p) return res.status(404).json({ message: "Not found" });
+    res.json(p);
   } catch (err) {
     handleError(res, err);
   }
 };
 
+// 3. Add Product
 exports.addProduct = async (req, res) => {
   try {
-    const { name, category, costPrice, sellingPrice, stock, lowStockThreshold } = req.body;
-    const product = new Product({ name, category, costPrice, sellingPrice, stock, lowStockThreshold });
-    await product.save();
-    res.status(201).json(product);
+    const product = new Product(req.body);
+    const saved = await product.save();
+
+    // Log the initial stock creation
+    await new StockLog({
+      productId: saved._id,
+      productName: saved.name,
+      changeType: "Adjustment",
+      previousStock: 0,
+      changeAmount: saved.stock,
+      newStock: saved.stock,
+    }).save();
+
+    res.status(201).json(saved);
   } catch (err) {
     handleError(res, err);
   }
 };
 
+// 4. Update Product (With Logging)
 exports.updateProduct = async (req, res) => {
   try {
-    const updates = req.body;
-    const updated = await Product.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
-    if (!updated) return res.status(404).json({ message: 'Product not found' });
+    const oldProduct = await Product.findById(req.params.id);
+    if (!oldProduct) return res.status(404).json({ message: "Not found" });
+
+    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+
+    // Logic to detect stock change and log it
+    if (
+      req.body.stock !== undefined &&
+      Number(req.body.stock) !== oldProduct.stock
+    ) {
+      await new StockLog({
+        productId: updated._id,
+        productName: updated.name,
+        changeType: "Restock", // Mark as restock/adjustment
+        previousStock: oldProduct.stock,
+        changeAmount: Number(req.body.stock) - oldProduct.stock,
+        newStock: updated.stock,
+        date: new Date(),
+      }).save();
+    }
+    // Handle Variant Stock Changes
+    else if (req.body.variants) {
+      // Find which variant changed
+      req.body.variants.forEach(async (v, i) => {
+        const oldV = oldProduct.variants[i];
+        if (oldV && Number(v.stock) !== oldV.stock) {
+          await new StockLog({
+            productId: updated._id,
+            productName: `${updated.name} (${v.name})`,
+            changeType: "Restock",
+            previousStock: oldV.stock,
+            changeAmount: Number(v.stock) - oldV.stock,
+            newStock: Number(v.stock),
+            date: new Date(),
+          }).save();
+        }
+      });
+    }
+
     res.json(updated);
   } catch (err) {
     handleError(res, err);
   }
 };
 
-exports.setStock = async (req, res) => {
-  try {
-    const { stock } = req.body;
-    const productId = req.params.id;
-
-    // Validate the stock value
-    if (stock <= 0) {
-      return res.status(400).json({ message: 'Stock must be greater than 0' });
-    }
-
-    // Find the product by ID and set the stock to the new value
-    const product = await Product.findById(productId);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-
-    product.stock = stock;  // Set the stock directly
-    await product.save();
-
-    res.json({ message: 'Product stock updated successfully', product });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error updating stock' });
-  }
-};
-
+// 5. Delete Product
 exports.deleteProduct = async (req, res) => {
   try {
-    // Delete the product completely from the database
     const p = await Product.findByIdAndDelete(req.params.id);
-    if (!p) return res.status(404).json({ message: 'Product not found' });
-
-    res.json({ message: 'Product deleted successfully' });
+    if (!p) return res.status(404).json({ message: "Not found" });
+    res.json({ message: "Deleted" });
   } catch (err) {
     handleError(res, err);
   }
 };
 
+// 6. Set Stock Manually
+exports.setStock = async (req, res) => {
+  try {
+    const { stock } = req.body;
+    const p = await Product.findById(req.params.id);
+    if (!p) return res.status(404).json({ message: "Not found" });
+
+    const oldStock = p.stock;
+    p.stock = Number(stock);
+    const saved = await p.save();
+
+    const changeAmount = Number(req.body.stock) - oldProduct.stock;
+
+    // ✅ RECORD THE ADJUSTMENT LOG
+    await new StockLog({
+      productId: updated._id,
+      productName: updated.name,
+      changeType: changeAmount >= 0 ? "Restock" : "Adjustment", // Logic to label it
+      previousStock: oldProduct.stock,
+      changeAmount: changeAmount, // This will be -4 if you decreased it
+      newStock: updated.stock,
+      date: new Date(),
+    }).save();
+
+    res.json(saved);
+  } catch (err) {
+    handleError(res, err);
+  }
+};
+
+// 7. Restock
 exports.restockProduct = async (req, res) => {
   try {
     const { quantity } = req.body;
-    const productId = req.params.id;
-    const updatedProduct = await increaseStock(productId, quantity, 'Restock');
-    res.json({ message: 'Product restocked', product: updatedProduct });
+    const p = await Product.findById(req.params.id);
+    if (!p) return res.status(404).json({ message: "Not found" });
+
+    const oldStock = p.stock;
+    p.stock += Number(quantity);
+    const saved = await p.save();
+
+    // Record Log
+    await new StockLog({
+      productId: saved._id,
+      productName: saved.name,
+      changeType: "Restock",
+      previousStock: oldStock,
+      changeAmount: Number(quantity),
+      newStock: saved.stock,
+      date: new Date(),
+    }).save();
+
+    res.json({ message: "Restocked", product: saved });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
 
-// Optional: low stock endpoint
+// 8. Get Low Stock
 exports.getLowStock = async (req, res) => {
   try {
-    const products = await Product.find({ archived: false, $expr: { $lt: ['$stock', '$lowStockThreshold'] } });
-    const enriched = products.map(p => ({ ...p.toObject(), stockValue: +(p.stock * p.costPrice).toFixed(2), lowStock: true }));
-    res.json(enriched);
+    const products = await Product.find({
+      archived: false,
+      $expr: { $lt: ["$stock", "$lowStockThreshold"] },
+    });
+    res.json(products);
   } catch (err) {
     handleError(res, err);
   }
 };
+
+exports.Model = Product;

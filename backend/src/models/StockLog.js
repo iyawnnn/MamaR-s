@@ -1,15 +1,21 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const stockLogSchema = new mongoose.Schema({
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  change: { type: Number, required: true },
-  reason: {
-    type: String,
-    enum: ['Sale', 'Restock', 'Manual Adjustment'],
-    required: true
+  productId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "InventoryItem",
+    required: true,
   },
-  reference: { type: String },
-  date: { type: Date, default: Date.now }
-}, { timestamps: true });
+  productName: String,
+  changeType: {
+    type: String,
+    enum: ["Restock", "Sale", "Adjustment"],
+    default: "Adjustment",
+  },
+  previousStock: Number,
+  changeAmount: Number,
+  newStock: Number,
+  date: { type: Date, default: Date.now },
+});
 
-module.exports = mongoose.model('StockLog', stockLogSchema);
+module.exports = mongoose.model("StockLog", stockLogSchema);

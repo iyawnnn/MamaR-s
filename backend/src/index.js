@@ -9,7 +9,6 @@ const rateLimit = require('express-rate-limit');
 const productRoutes = require("./routes/productRoutes");
 const salesRoutes = require("./routes/salesRoutes");
 const stockLogRoutes = require("./routes/stockLogRoutes");
-const expenseRoutes = require("./routes/expenseRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const authRoutes = require('./routes/authRoutes'); // add this line
@@ -32,7 +31,6 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/products", productRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/stock-logs", stockLogRoutes);
-app.use("/api/expenses", expenseRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/dashboard", dashboardRoutes); // ⬅️ add this new one
 app.use("/api/auth", authRoutes); // add this line
