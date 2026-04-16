@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "../api/axios";
+import api from "../services/api";
 import {
   TrendingUp,
   PieChart,
@@ -12,7 +12,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-// Standard Peso Helper
 const Peso = () => (
   <span className="font-sans mr-0.5 opacity-80 font-medium">₱</span>
 );
@@ -32,8 +31,8 @@ export default function ReportsPage() {
   const fetchReport = async () => {
     setLoading(true);
     try {
-      const salesRes = await axios.get("/sales");
-      const prodRes = await axios.get("/products");
+      const salesRes = await api.get("/sales");
+      const prodRes = await api.get("/products");
 
       const sales = salesRes.data.sales || salesRes.data || [];
       const products = prodRes.data.products || prodRes.data || [];
@@ -116,7 +115,6 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 sm:space-y-10 animate-fade-in">
-      {/* Header & Timeframe Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="text-left">
           <h2 className="text-3xl sm:text-4xl font-black text-stone-800 tracking-tight font-display">
@@ -127,7 +125,6 @@ export default function ReportsPage() {
           </p>
         </div>
 
-        {/* Responsive Timeframe Toggle */}
         <div className="flex bg-white p-1 rounded-2xl border border-stone-200 shadow-sm self-start">
           {["24h", "7d", "30d"].map((t) => (
             <button
@@ -145,7 +142,6 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Stats Cards - Responsive Grid Logic */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <ReportStat
           label="Revenue"
@@ -188,7 +184,6 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-        {/* Revenue Split Table */}
         <div className="xl:col-span-2 flex flex-col">
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden flex-1 flex flex-col">
             <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
@@ -230,7 +225,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Action Sidebar */}
         <div className="flex flex-col gap-6">
           <div className="bg-stone-900 rounded-2xl p-8 text-white shadow-xl flex-1 flex flex-col justify-center min-h-[300px] text-left">
             <h3 className="text-2xl font-black font-display uppercase tracking-tight leading-none mb-3">
@@ -268,7 +262,6 @@ export default function ReportsPage() {
   );
 }
 
-// Internal Helper for Stat Cards
 const ReportStat = ({ label, value, icon: Icon, color, sub }) => (
   <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between hover:border-stone-300 transition-all group">
     <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">

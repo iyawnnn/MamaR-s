@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from '../api/axios';
+import api from '../services/api';
 import { X, Save, Plus, Trash2 } from 'lucide-react';
 
 export default function ProductForm({ product, onClose }) {
@@ -48,7 +48,6 @@ export default function ProductForm({ product, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // VALIDATION: Ensure variants have names if enabled
     if (form.hasVariants) {
       if (form.variants.length === 0) {
         alert("Please add at least one size variant.");
@@ -64,11 +63,10 @@ export default function ProductForm({ product, onClose }) {
 
     setSaving(true);
     try {
-      console.log("Submitting:", form); // Debug log to see what is sent
       if (product) {
-        await axios.put(`/products/${product._id}`, form);
+        await api.put(`/products/${product._id}`, form);
       } else {
-        await axios.post('/products', form);
+        await api.post('/products', form);
       }
       onClose();
     } catch (err) {
@@ -103,7 +101,6 @@ export default function ProductForm({ product, onClose }) {
             />
           </div>
 
-          {/* Variants Toggle */}
           <div className="flex items-center gap-3 py-2 bg-amber-50 px-4 rounded-lg border border-amber-100">
             <input 
               type="checkbox" 

@@ -312,7 +312,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* ✅ IMPROVED RESPONSIVE GRID FOR TOP PRODUCTS */}
         {/* Top Products Section */}
         <div className="xl:col-span-3">
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 sm:p-8 h-full">
@@ -331,11 +330,6 @@ const Dashboard = () => {
               </button>
             </div>
 
-            {/* ✅ SYMMETRICAL GRID: 
-        - grid-cols-1: Mobile
-        - md:grid-cols-2: Tablet/Mid-Desktop (Perfect 2x2 Square)
-        - 2xl:grid-cols-4: Ultra-wide (1x4 Row)
-    */}
             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4 sm:gap-6">
               {data.topProducts.map((prod, index) => (
                 <div

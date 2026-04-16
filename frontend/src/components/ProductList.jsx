@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "../api/axios";
+import api from "../services/api";
 import { 
   Plus, Edit3, Trash2, RefreshCcw, 
   AlertTriangle, Layers 
@@ -19,8 +19,7 @@ export default function ProductList() {
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/products");
-      // Backend returns { products: [...] }
+      const res = await api.get("/products");
       setProducts(res.data.products || res.data || []);
     } catch (err) {
       console.error("fetch products", err);
@@ -35,7 +34,7 @@ export default function ProductList() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`/products/${productToDelete._id}`);
+      await api.delete(`/products/${productToDelete._id}`);
       fetchProducts();
       setShowDeleteModal(false);
     } catch (err) {
@@ -45,7 +44,6 @@ export default function ProductList() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header - SEARCH BAR REMOVED */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
         <div>
           <h2 className="text-3xl font-bold text-stone-800 font-display">Inventory</h2>
@@ -60,7 +58,6 @@ export default function ProductList() {
         </button>
       </div>
 
-      {/* BIG CARDS GRID */}
       {loading ? (
         <div className="text-center py-20 text-stone-400">Loading inventory...</div>
       ) : (
@@ -71,7 +68,6 @@ export default function ProductList() {
             return (
               <div key={p._id} className={`bg-white rounded-2xl border-2 ${isLowStock ? 'border-red-100 shadow-red-50' : 'border-stone-100'} shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col`}>
                 
-                {/* Card Header */}
                 <div className="p-6 border-b border-stone-100 bg-stone-50/50 flex justify-between items-start">
                   <div>
                     <h3 className="text-2xl font-bold text-stone-800 font-display">{p.name}</h3>
@@ -101,7 +97,6 @@ export default function ProductList() {
                   </div>
                 </div>
 
-                {/* Card Body: Pricing & Variants */}
                 <div className="p-6 flex-1">
                   {p.hasVariants ? (
                     <div className="bg-stone-50 rounded-xl border border-stone-200 overflow-hidden">
@@ -140,7 +135,6 @@ export default function ProductList() {
                   )}
                 </div>
 
-                {/* Card Actions */}
                 <div className="p-4 bg-stone-50 border-t border-stone-100 grid grid-cols-3 gap-3">
                   <button 
                     onClick={() => setRestockTarget(p)} 
@@ -168,7 +162,6 @@ export default function ProductList() {
         </div>
       )}
 
-      {/* --- Modals --- */}
       {showForm && <ProductForm product={editing} onClose={() => { setShowForm(false); fetchProducts(); }} />}
       {restockTarget && <RestockModal product={restockTarget} onClose={() => { setRestockTarget(null); fetchProducts(); }} />}
       

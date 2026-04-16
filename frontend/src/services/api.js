@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL.replace(/\/$/, '');
-
 const api = axios.create({
-  baseURL: API_URL,
+  // Hardcoded to the NEW port 5001
+  baseURL: 'http://localhost:5001/api', 
+  // Increased to 10 seconds
+  timeout: 10000, 
 });
 
-// Attach token to every request automatically
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -23,7 +23,6 @@ export const setToken = (token) => {
   }
 };
 
-// Add these for your new Expense feature
 export const createExpense = async (data) => (await api.post('/expenses', data)).data;
 export const fetchExpenses = async () => (await api.get('/expenses')).data;
 

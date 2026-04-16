@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../api/axios";
+import api from "../services/api";
 import {
   Loader2,
   ArrowUpRight,
@@ -53,9 +53,7 @@ export default function StockLogsPage() {
     );
 
   return (
-    /* ✅ PADDING: Uses the same fluid padding as your Dashboard */
     <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 animate-fade-in px-4 sm:px-6 lg:px-8">
-      {/* Header Area */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-stone-200 pb-5 gap-4">
         <div>
           <h2 className="text-3xl sm:text-4xl font-black text-stone-800 tracking-tight font-display text-left">
@@ -66,7 +64,6 @@ export default function StockLogsPage() {
           </p>
         </div>
 
-        {/* Filter Pills - Responsive Scroll for Small Screens */}
         <div className="flex bg-stone-100 p-1 rounded-xl self-start sm:self-end overflow-x-auto max-w-full hide-scrollbar">
           {["All", "Restock", "Sale"].map((type) => (
             <button
@@ -87,9 +84,7 @@ export default function StockLogsPage() {
         </div>
       </div>
 
-      {/* Main Table Container - EXACT SAME AS DASHBOARD */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden flex flex-col min-w-0">
-        {/* Table Header Section */}
         <div className="p-4 sm:p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
           <h3 className="font-bold text-stone-800 font-display uppercase text-xs tracking-widest flex items-center gap-2">
             <History className="w-4 h-4 text-amber-500" />
@@ -100,7 +95,6 @@ export default function StockLogsPage() {
           </span>
         </div>
 
-        {/* ✅ WRAPPER: This is what forces the scroll and stops the squeezing */}
         <div className="overflow-x-auto w-full">
           <table className="w-full text-sm text-left border-collapse min-w-[650px]">
             <thead className="text-[10px] text-stone-400 uppercase font-black bg-white border-b border-stone-50">
@@ -184,7 +178,6 @@ export default function StockLogsPage() {
           </table>
         </div>
 
-        {/* Pagination - Matching the dashboard card footer style */}
         {totalPages > 1 && (
           <div className="p-4 bg-stone-50/30 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">

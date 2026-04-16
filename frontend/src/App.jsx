@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Menu, Loader2, Wheat } from "lucide-react";
 import { AuthContext } from "./contexts/AuthContext";
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Components
 import Sidebar from "./components/Sidebar";

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from '../api/axios';
+import api from '../services/api';
 import { ShoppingCart, Plus, Loader2, User, DollarSign, Calendar, Package, Layers, Hash } from 'lucide-react';
 
 export default function SalesForm({ onSaleRecorded }) {
@@ -7,7 +7,6 @@ export default function SalesForm({ onSaleRecorded }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form State
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -18,7 +17,7 @@ export default function SalesForm({ onSaleRecorded }) {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const res = await axios.get('/products');
+        const res = await api.get('/products');
         setProducts(res.data.products || res.data || []);
       } catch (err) {
         console.error("Error loading products", err);
@@ -29,7 +28,6 @@ export default function SalesForm({ onSaleRecorded }) {
     loadProducts();
   }, []);
 
-  // Auto-fill Price when Product/Size changes
   useEffect(() => {
     if (!selectedProduct) {
       setPrice('');
@@ -63,7 +61,7 @@ export default function SalesForm({ onSaleRecorded }) {
         date: saleDate
       };
 
-      await axios.post('/sales', payload);
+      await api.post('/sales', payload);
       
       setQuantity(1);
       setCustomerName('');
@@ -99,7 +97,6 @@ export default function SalesForm({ onSaleRecorded }) {
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-          {/* 1. Date */}
           <div>
             <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
               <Calendar size={12} /> Date
@@ -107,7 +104,6 @@ export default function SalesForm({ onSaleRecorded }) {
             <input type="date" required className={inputClass} value={saleDate} onChange={e => setSaleDate(e.target.value)} />
           </div>
 
-          {/* 2. Customer */}
           <div>
             <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
               <User size={12} /> Customer
@@ -115,7 +111,6 @@ export default function SalesForm({ onSaleRecorded }) {
             <input type="text" placeholder="John Doe" className={inputClass} value={customerName} onChange={e => setCustomerName(e.target.value)} />
           </div>
 
-          {/* 3. Product - FORMATTED DROPDOWN */}
           <div className="relative">
             <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
               <Package size={12} /> Product
@@ -139,7 +134,6 @@ export default function SalesForm({ onSaleRecorded }) {
             </select>
           </div>
 
-          {/* 4. Size */}
           <div>
             <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
               <Layers size={12} /> Size / Variant
@@ -157,7 +151,6 @@ export default function SalesForm({ onSaleRecorded }) {
             </select>
           </div>
 
-          {/* 5. Unit Price */}
           <div>
             <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
                <DollarSign size={12} /> Unit Price (₱)
@@ -165,7 +158,6 @@ export default function SalesForm({ onSaleRecorded }) {
             <input type="number" step="0.01" required className={`${inputClass} font-bold text-emerald-700`} value={price} onChange={e => setPrice(e.target.value)} />
           </div>
 
-          {/* 6. Quantity */}
           <div>
             <label className="text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
               <Hash size={12} /> Quantity
@@ -178,7 +170,6 @@ export default function SalesForm({ onSaleRecorded }) {
           </div>
         </div>
 
-        {/* FOOTER: Total & Action */}
         <div className="mt-8 pt-6 border-t border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
              <div className="text-right">

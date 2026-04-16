@@ -11,7 +11,7 @@ export default function SalesPage() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // ✅ FIXED: Now 5 items per page
+  const itemsPerPage = 5;
 
   const totalRevenue = sales.reduce(
     (acc, curr) => acc + (curr.totalPrice || 0),
@@ -22,7 +22,7 @@ export default function SalesPage() {
   const fetchSales = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/sales");
+      const res = await api.get("/sales");
       const salesData = res.data.sales || res.data || [];
       setSales(salesData);
     } catch (err) {
@@ -44,7 +44,6 @@ export default function SalesPage() {
 
   return (
     <div className="space-y-6 sm:space-y-10 animate-fade-in">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1 text-left">
           <h2 className="text-3xl sm:text-4xl font-black text-stone-800 tracking-tight font-display">
@@ -55,10 +54,7 @@ export default function SalesPage() {
           </p>
         </div>
 
-        {/* ✅ FIXED STATS: Aligned to the right for mobile (< 768px) */}
-        {/* Stats Pills - Right Aligned on Mobile */}
         <div className="flex gap-3 w-full md:w-auto">
-          {/* Revenue Card */}
           <div className="flex-1 md:flex-none bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col items-end justify-center">
             <span className="text-[10px] uppercase font-black text-stone-400 tracking-[0.2em] text-right block w-full">
               Total Revenue
@@ -69,7 +65,6 @@ export default function SalesPage() {
             </span>
           </div>
 
-          {/* Units Card */}
           <div className="flex-1 md:flex-none bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col items-end justify-center">
             <span className="text-[10px] uppercase font-black text-stone-400 tracking-[0.2em] text-right block w-full">
               Units Sold
@@ -81,7 +76,6 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* POS FORM */}
       <SalesForm
         onSaleRecorded={() => {
           fetchSales();
@@ -89,7 +83,6 @@ export default function SalesPage() {
         }}
       />
 
-      {/* TRANSACTION HISTORY TABLE */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden flex flex-col">
         <div className="p-5 sm:p-6 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
           <h3 className="font-black text-stone-800 text-[11px] uppercase tracking-[0.2em] flex items-center gap-2">
@@ -114,7 +107,6 @@ export default function SalesPage() {
           </div>
         ) : (
           <div className="flex flex-col overflow-hidden">
-            {/* ✅ IMPROVED MOBILE TABLE SCROLL */}
             <div className="w-full overflow-x-auto scrollbar-hide">
               <table className="w-full text-sm text-left border-collapse min-w-[750px]">
                 <thead className="text-[10px] text-stone-400 uppercase font-black bg-white border-b border-stone-50">
@@ -159,7 +151,6 @@ export default function SalesPage() {
               </table>
             </div>
 
-            {/* STYLISH PAGINATION */}
             <div className="p-5 border-t border-stone-100 bg-stone-50/30 flex items-center justify-between">
               <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest hidden sm:block">
                 Entry {(currentPage - 1) * itemsPerPage + 1} -{" "}

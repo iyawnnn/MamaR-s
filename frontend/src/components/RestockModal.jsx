@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from '../api/axios';
+import api from '../services/api';
 import { X, Package, Save, ArrowRight, Layers, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function RestockModal({ product, onClose }) {
@@ -27,13 +27,13 @@ export default function RestockModal({ product, onClose }) {
           stock: Number(variantStocks[v.name])
         }));
 
-        await axios.put(`/products/${product._id}`, {
+        await api.put(`/products/${product._id}`, {
           variants: updatedVariants
         });
 
       } else {
         // Update the main stock field for single items
-        await axios.put(`/products/${product._id}`, {
+        await api.put(`/products/${product._id}`, {
           stock: Number(newStock)
         });
       }

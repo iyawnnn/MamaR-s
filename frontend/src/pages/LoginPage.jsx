@@ -12,17 +12,25 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  const onSubmit = async (e) => {
+const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErr("");
+    
     try {
+      if (!login) {
+        throw new Error("Critical Error: AuthContext is missing.");
+      }
+      
       await login({ email, password });
       navigate("/dashboard");
     } catch (error) {
-      setErr(error.response?.data?.error || "Invalid email or password");
+      console.error("Error caught in LoginPage:", error);
+      // Display the exact reason it failed on the screen
+      setErr(error.response?.data?.error || error.message || "Network timeout or connection refused");
     } finally {
-      setLoading(false);
+      // THIS FORCES THE SPINNER TO STOP
+      setLoading(false); 
     }
   };
 

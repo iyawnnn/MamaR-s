@@ -15,40 +15,33 @@ export function AuthProvider({ children }) {
       if (token && storedUser) {
         try {
           setToken(token);
-          
-          const parsedUser = JSON.parse(storedUser);
-          if (parsedUser) {
-            setUser(parsedUser);
-          } else {
-            logout();
-          }
+          setUser(JSON.parse(storedUser));
         } catch (error) {
           console.error("Auth initialization error:", error);
           logout();
         }
-      } else {
-        setLoading(false);
       }
       setLoading(false);
     };
-
     initAuth();
   }, []);
 
   const login = async (credentials) => {
     try {
-      // Use 'api' instead of 'axios'
       const res = await api.post("/auth/login", credentials);
       const { token, user } = res.data;
+
+      if (!token || !user) throw new Error("Invalid response from server");
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       setToken(token);
       setUser(user);
+
       return res;
     } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
+      console.error("Login failed inside AuthContext:", error);
+      throw error; // This forces the error back to the Login Page
     }
   };
 

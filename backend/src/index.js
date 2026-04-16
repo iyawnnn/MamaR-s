@@ -61,9 +61,10 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 5000;
+// Replace the bottom of your index.js with this:
+const PORT = process.env.PORT || 5001;
 
-// Explicitly bind the server to IPv4 to prevent IPv6 routing mismatches
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`Backend securely running on http://127.0.0.1:${PORT}`);
+// 0.0.0.0 ensures the backend doesn't accidentally block local requests
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Backend securely running on port ${PORT}`);
 });
