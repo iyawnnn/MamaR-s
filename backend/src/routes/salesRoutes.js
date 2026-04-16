@@ -1,13 +1,11 @@
-// backend/src/routes/sales.js
-const express = require('express');
-const router = express.Router();
-const Sale = require('../models/Sale');
-const { recordSale } = require('../controllers/salesController');
+import express from 'express';
+import Sale from '../models/Sale.js';
+import { recordSale } from '../controllers/salesController.js';
 
-// ✅ Create new sale
+const router = express.Router();
+
 router.post('/', recordSale);
 
-// ✅ Fetch all sales (with product info)
 router.get('/', async (req, res) => {
   try {
     const sales = await Sale.find()
@@ -19,4 +17,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

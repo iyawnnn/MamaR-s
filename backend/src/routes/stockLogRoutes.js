@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import StockLog from '../models/StockLog.js';
+
 const router = express.Router();
-const StockLog = require('../models/StockLog');
 
 router.get('/', async (req, res) => {
   try {
@@ -13,4 +14,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

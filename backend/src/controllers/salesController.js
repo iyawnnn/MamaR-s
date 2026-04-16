@@ -1,9 +1,8 @@
-const Sale = require("../models/Sale");
-const { Model: Product } = require("../controllers/productController");
-const StockLog = require("../models/StockLog");
+import Sale from "../models/Sale.js";
+import Product from "../models/InventoryItem.js";
+import StockLog from "../models/StockLog.js";
 
-// 📌 Record a new sale
-exports.recordSale = async (req, res) => {
+export const recordSale = async (req, res) => {
   try {
     const {
       productId,
@@ -12,10 +11,9 @@ exports.recordSale = async (req, res) => {
       customerName,
       variantName,
       customPrice,
-      date, // ✅ Receive the custom date
+      date,
     } = req.body;
 
-    // 1. Find Product
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -24,7 +22,6 @@ exports.recordSale = async (req, res) => {
     let finalUnitPrice = 0;
     let productNameToRecord = product.name;
 
-    // 2. Determine Price & Name (Handle Variants)
     if (product.hasVariants) {
       if (!variantName) {
         return res.status(400).json({ message: "Please select a size." });
@@ -37,21 +34,16 @@ exports.recordSale = async (req, res) => {
         return res.status(400).json({ message: "Size not found." });
       }
 
-      // Check Stock
       if (product.variants[variantIndex].stock < quantity) {
         return res
           .status(400)
           .json({ message: `Not enough stock for ${variantName}.` });
       }
 
-      // Deduct Stock
       product.variants[variantIndex].stock -= quantity;
-
-      // Set Base Price & Name
       finalUnitPrice = product.variants[variantIndex].price;
       productNameToRecord = `${product.name} (${variantName})`;
     } else {
-      // Simple Product Logic
       if (product.stock < quantity) {
         return res.status(400).json({ message: "Not enough stock." });
       }
@@ -59,7 +51,6 @@ exports.recordSale = async (req, res) => {
       finalUnitPrice = product.sellingPrice;
     }
 
-    // 3. Handle Custom Price Override
     if (
       customPrice !== undefined &&
       customPrice !== null &&
@@ -68,13 +59,10 @@ exports.recordSale = async (req, res) => {
       finalUnitPrice = Number(customPrice);
     }
 
-    // 4. Save Product Stock
     await product.save();
 
-    // 5. Calculate Total
     const totalPrice = finalUnitPrice * quantity - discount;
 
-    // 6. Create Sale Record
     const sale = new Sale({
       productId,
       productName: productNameToRecord,
@@ -83,12 +71,11 @@ exports.recordSale = async (req, res) => {
       unitPrice: finalUnitPrice,
       totalPrice,
       discount,
-      date: date ? new Date(date) : new Date(), // ✅ Use custom date or default to now
+      date: date ? new Date(date) : new Date(),
     });
 
     await sale.save();
 
-    // ✅ ADD THIS LOG ENTRY
     await new StockLog({
       productId: product._id,
       productName: productNameToRecord,
@@ -110,7 +97,7 @@ exports.recordSale = async (req, res) => {
   }
 };
 
-exports.getAllSales = async (req, res) => {
+export const getAllSales = async (req, res) => {
   try {
     const sales = await Sale.find()
       .populate("productId", "name")

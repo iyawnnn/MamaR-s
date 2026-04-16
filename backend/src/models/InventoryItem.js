@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 function toTitleCase(str = '') {
   return str.replace(/\w\S*/g, (txt) =>
@@ -13,12 +13,9 @@ const itemSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
-  // Base Info
   sellingPrice: { type: Number, default: 0 },
   stock: { type: Number, default: 0 },
   lowStockThreshold: { type: Number, default: 5 },
-
-  // Variants / Sizes
   hasVariants: { type: Boolean, default: false },
   variants: [{
     name: { type: String, required: true },
@@ -26,12 +23,10 @@ const itemSchema = new mongoose.Schema({
     stock: { type: Number, default: 0 },
     lowStockThreshold: { type: Number, default: 5 }
   }],
-
   archived: { type: Boolean, default: false },
   dateAdded: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-// Pre-save hook
 itemSchema.pre('save', function (next) {
   if (this.isModified('name') && this.name) {
     this.name = toTitleCase(this.name);
@@ -42,5 +37,4 @@ itemSchema.pre('save', function (next) {
 itemSchema.set('toJSON', { virtuals: true });
 itemSchema.set('toObject', { virtuals: true });
 
-// We explicitly map this to the 'products' collection to keep your data
-module.exports = mongoose.model('InventoryItem', itemSchema, 'products');
+export default mongoose.model('InventoryItem', itemSchema, 'products');

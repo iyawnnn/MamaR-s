@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, default: 'admin' },
 }, { timestamps: true });
 
-// Hash password before save
+// Hash password before saving to the database
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -16,9 +16,8 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Instance method to compare password
 userSchema.methods.comparePassword = async function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model('User', userSchema);

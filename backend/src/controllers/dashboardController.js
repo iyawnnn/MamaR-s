@@ -1,8 +1,6 @@
-const Sale = require('../models/Sale');
-// Import the model from the productController to stay consistent
-const { Model: Product } = require('../controllers/productController');
+import Sale from '../models/Sale.js';
+import Product from '../models/InventoryItem.js';
 
-// Helper for date range
 const getDayRange = (date = new Date()) => {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
@@ -11,31 +9,26 @@ const getDayRange = (date = new Date()) => {
   return { start, end };
 };
 
-// 1. Get Stats (Revenue, Counts, Low Stock)
-exports.getDashboardStats = async (req, res) => {
+export const getDashboardStats = async (req, res) => {
   try {
     const { start, end } = getDayRange();
 
-    // Daily Sales
     const dailySales = await Sale.aggregate([
       { $match: { date: { $gte: start, $lte: end } } },
       { $group: { _id: null, total: { $sum: "$totalPrice" }, count: { $sum: 1 } } }
     ]);
 
-    // Monthly Sales
     const firstDayMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const monthlySales = await Sale.aggregate([
       { $match: { date: { $gte: firstDayMonth } } },
       { $group: { _id: null, total: { $sum: "$totalPrice" } } }
     ]);
 
-    // Low Stock Calculation (Supports Sizes)
     const allProducts = await Product.find({ archived: false });
     let lowStockCount = 0;
 
     for (const p of allProducts) {
       if (p.hasVariants && p.variants.length > 0) {
-        // If ANY size is low, count the product as low stock
         if (p.variants.some(v => v.stock <= (v.lowStockThreshold || 5))) {
           lowStockCount++;
         }
@@ -59,8 +52,7 @@ exports.getDashboardStats = async (req, res) => {
   }
 };
 
-// 2. Get Chart Data
-exports.getSalesChart = async (req, res) => {
+export const getSalesChart = async (req, res) => {
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

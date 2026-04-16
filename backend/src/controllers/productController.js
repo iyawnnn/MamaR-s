@@ -1,7 +1,6 @@
-const Product = require("../models/InventoryItem");
-const StockLog = require("../models/StockLog");
+import Product from "../models/InventoryItem.js";
+import StockLog from "../models/StockLog.js";
 
-// Helper for errors
 const handleError = (res, err) => {
   console.error("Controller Error:", err);
   if (err.name === "ValidationError") {
@@ -13,8 +12,7 @@ const handleError = (res, err) => {
   return res.status(500).json({ message: "Server error" });
 };
 
-// 1. Get All Products
-exports.getProducts = async (req, res) => {
+export const getProducts = async (req, res) => {
   try {
     const { search, sort = "-dateAdded" } = req.query;
     const q = { archived: false };
@@ -44,8 +42,7 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-// 2. Get Single Product
-exports.getProduct = async (req, res) => {
+export const getProduct = async (req, res) => {
   try {
     const p = await Product.findById(req.params.id);
     if (!p) return res.status(404).json({ message: "Not found" });
@@ -55,13 +52,11 @@ exports.getProduct = async (req, res) => {
   }
 };
 
-// 3. Add Product
-exports.addProduct = async (req, res) => {
+export const addProduct = async (req, res) => {
   try {
     const product = new Product(req.body);
     const saved = await product.save();
 
-    // Log the initial stock creation
     await new StockLog({
       productId: saved._id,
       productName: saved.name,
@@ -77,8 +72,7 @@ exports.addProduct = async (req, res) => {
   }
 };
 
-// 4. Update Product (With Logging)
-exports.updateProduct = async (req, res) => {
+export const updateProduct = async (req, res) => {
   try {
     const oldProduct = await Product.findById(req.params.id);
     if (!oldProduct) return res.status(404).json({ message: "Not found" });
@@ -87,7 +81,6 @@ exports.updateProduct = async (req, res) => {
       new: true,
     });
 
-    // Logic to detect stock change and log it
     if (
       req.body.stock !== undefined &&
       Number(req.body.stock) !== oldProduct.stock
@@ -95,16 +88,13 @@ exports.updateProduct = async (req, res) => {
       await new StockLog({
         productId: updated._id,
         productName: updated.name,
-        changeType: "Restock", // Mark as restock/adjustment
+        changeType: "Restock",
         previousStock: oldProduct.stock,
         changeAmount: Number(req.body.stock) - oldProduct.stock,
         newStock: updated.stock,
         date: new Date(),
       }).save();
-    }
-    // Handle Variant Stock Changes
-    else if (req.body.variants) {
-      // Find which variant changed
+    } else if (req.body.variants) {
       req.body.variants.forEach(async (v, i) => {
         const oldV = oldProduct.variants[i];
         if (oldV && Number(v.stock) !== oldV.stock) {
@@ -127,8 +117,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// 5. Delete Product
-exports.deleteProduct = async (req, res) => {
+export const deleteProduct = async (req, res) => {
   try {
     const p = await Product.findByIdAndDelete(req.params.id);
     if (!p) return res.status(404).json({ message: "Not found" });
@@ -138,8 +127,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// 6. Set Stock Manually
-exports.setStock = async (req, res) => {
+export const setStock = async (req, res) => {
   try {
     const { stock } = req.body;
     const p = await Product.findById(req.params.id);
@@ -149,16 +137,15 @@ exports.setStock = async (req, res) => {
     p.stock = Number(stock);
     const saved = await p.save();
 
-    const changeAmount = Number(req.body.stock) - oldProduct.stock;
+    const changeAmount = Number(stock) - oldStock;
 
-    // ✅ RECORD THE ADJUSTMENT LOG
     await new StockLog({
-      productId: updated._id,
-      productName: updated.name,
-      changeType: changeAmount >= 0 ? "Restock" : "Adjustment", // Logic to label it
-      previousStock: oldProduct.stock,
-      changeAmount: changeAmount, // This will be -4 if you decreased it
-      newStock: updated.stock,
+      productId: saved._id,
+      productName: saved.name,
+      changeType: changeAmount >= 0 ? "Restock" : "Adjustment",
+      previousStock: oldStock,
+      changeAmount: changeAmount,
+      newStock: saved.stock,
       date: new Date(),
     }).save();
 
@@ -168,8 +155,7 @@ exports.setStock = async (req, res) => {
   }
 };
 
-// 7. Restock
-exports.restockProduct = async (req, res) => {
+export const restockProduct = async (req, res) => {
   try {
     const { quantity } = req.body;
     const p = await Product.findById(req.params.id);
@@ -179,7 +165,6 @@ exports.restockProduct = async (req, res) => {
     p.stock += Number(quantity);
     const saved = await p.save();
 
-    // Record Log
     await new StockLog({
       productId: saved._id,
       productName: saved.name,
@@ -196,8 +181,7 @@ exports.restockProduct = async (req, res) => {
   }
 };
 
-// 8. Get Low Stock
-exports.getLowStock = async (req, res) => {
+export const getLowStock = async (req, res) => {
   try {
     const products = await Product.find({
       archived: false,
@@ -208,5 +192,3 @@ exports.getLowStock = async (req, res) => {
     handleError(res, err);
   }
 };
-
-exports.Model = Product;

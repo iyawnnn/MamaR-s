@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const saleSchema = new mongoose.Schema({
   productId: {
@@ -31,12 +31,10 @@ const saleSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  // ❌ REMOVED paymentMethod entirely
-  
   date: {
     type: Date,
     default: Date.now
   }
 });
 
-module.exports = mongoose.model('Sale', saleSchema);
+export default mongoose.model('Sale', saleSchema);

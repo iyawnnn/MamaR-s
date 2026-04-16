@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import * as reportController from '../controllers/reportController.js';
+
 const router = express.Router();
-const reportController = require('../controllers/reportController');
 
 router.get('/dashboard-stats', reportController.getDashboardStats);
 router.get('/sales-chart', reportController.getSalesOverTime);
 
-module.exports = router;
+export default router;

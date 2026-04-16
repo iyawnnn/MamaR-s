@@ -1,17 +1,15 @@
-const Sale = require('../models/Sale');
+import Sale from '../models/Sale.js';
 
-exports.getDashboardStats = async (req, res) => {
+export const getDashboardStats = async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 1. Daily Sales
     const dailySales = await Sale.aggregate([
       { $match: { date: { $gte: today } } },
       { $group: { _id: null, total: { $sum: "$totalPrice" } } }
     ]);
 
-    // 2. Monthly Sales
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const monthlySales = await Sale.aggregate([
       { $match: { date: { $gte: startOfMonth } } },
@@ -21,14 +19,13 @@ exports.getDashboardStats = async (req, res) => {
     res.json({
       dailySales: dailySales[0]?.total || 0,
       monthlySales: monthlySales[0]?.total || 0,
-      // No expenses or net profit anymore
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-exports.getSalesOverTime = async (req, res) => {
+export const getSalesOverTime = async (req, res) => {
   try {
     const { start, end } = req.query;
     const startDate = start ? new Date(start) : new Date(new Date().setDate(new Date().getDate() - 30));
