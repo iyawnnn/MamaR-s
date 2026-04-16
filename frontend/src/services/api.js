@@ -12,3 +12,13 @@ const axiosInstance = axios.create({
 });
 
 export default axiosInstance;
+
+export const createExpense = async (expenseData) => {
+  const response = await api.post('/expenses', expenseData);
+  return response.data;
+};
+
+export const fetchExpenses = async () => {
+  const response = await api.get('/expenses');
+  return response.data;
+};

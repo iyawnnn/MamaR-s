@@ -1,19 +1,40 @@
-// run with: node scripts/createAdmin.js
-require('dotenv').config();
-const mongoose = require('mongoose');
-const User = require('../models/User');
+import mongoose from 'mongoose';
+import User from '../src/models/User.js';
+import 'dotenv/config';
 
-async function createAdmin() {
-  await mongoose.connect(process.env.MONGO_URI);
-  const existing = await User.findOne({ email: 'admin@bakery.com' });
-  if (existing) {
-    console.log('Admin already exists');
+const createAdmin = async () => {
+  try {
+    // Connect to the local bakery_db
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('MongoDB Connected');
+
+    const adminEmail = 'admin@mamars.local';
+    const adminPassword = 'admin'; 
+
+    // Clear the existing local admin if you want to reset it
+    const existingAdmin = await User.findOne({ email: adminEmail });
+    if (existingAdmin) {
+      console.log('⚠️ Local admin found. Resetting credentials...');
+      await User.deleteOne({ email: adminEmail });
+    }
+
+    const adminUser = new User({
+      name: 'Local System Admin',
+      email: adminEmail,
+      password: adminPassword, 
+      role: 'admin'
+    });
+
+    await adminUser.save();
+    console.log(`🎉 Success! You can now log in locally.`);
+    console.log(`➡️  Email: ${adminEmail}`);
+    console.log(`➡️  Password: ${adminPassword}`);
+    
     process.exit(0);
+  } catch (error) {
+    console.error('❌ Error creating admin:', error);
+    process.exit(1);
   }
-  const user = new User({ name: 'Admin', email: 'admin@bakery.com', password: 'ChangeMe123!' });
-  await user.save();
-  console.log('Admin created', user.email);
-  process.exit(0);
-}
+};
 
-createAdmin().catch(err => { console.error(err); process.exit(1); });
+createAdmin();

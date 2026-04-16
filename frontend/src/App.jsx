@@ -11,6 +11,7 @@ import ProductsPage from "./pages/ProductsPage";
 import SalesPage from "./pages/SalesPage";
 import StockHistoryPage from "./pages/StockHistoryPage";
 import ReportsPage from "./pages/ReportsPage";
+import ExpensePage from "./pages/ExpensePage";
 
 // Professional loading spinner
 const LoadingScreen = () => (
@@ -77,6 +78,14 @@ function App() {
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/stock-history" element={<StockHistoryPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route
+              path="/expenses"
+              element={
+                <ProtectedRoute>
+                  <ExpensePage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

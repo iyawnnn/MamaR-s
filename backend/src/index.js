@@ -24,13 +24,18 @@ const limiter = rateLimit({
 });
 
 const corsOptions = {
+  // In production, use the strict URL. In development, dynamically allow the requesting origin.
   origin: process.env.NODE_ENV === 'production' 
     ? process.env.FRONTEND_URL 
-    : ['http://localhost:5173'],
+    : true, 
   credentials: true
 };
 
-app.use(helmet());
+app.use(helmet({ 
+  crossOriginResourcePolicy: false,
+  crossOriginOpenerPolicy: false 
+}));
+
 app.use(cors(corsOptions));
 app.use(limiter);
 app.use(express.json());
