@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "../api/axios";
+import api from "../services/api";
 import SalesForm from "../components/SalesForm";
 import { Loader2, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 

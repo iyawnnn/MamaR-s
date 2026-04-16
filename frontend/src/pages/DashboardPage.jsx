@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Plus,
 } from "lucide-react";
-import api from "../api/axios";
+import api from "../services/api";
 
 const Peso = () => (
   <span className="font-sans font-semibold text-current opacity-90 mr-0.5">

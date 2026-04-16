@@ -37,16 +37,14 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     try {
+      // Use 'api' instead of 'axios'
       const res = await api.post("/auth/login", credentials);
       const { token, user } = res.data;
-
-      if (!token || !user) throw new Error("Invalid response from server");
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       setToken(token);
       setUser(user);
-      
       return res;
     } catch (error) {
       console.error("Login failed:", error);
