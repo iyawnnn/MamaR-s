@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-import axios from "../api/axios";
+import api, { setToken } from "../services/api";
 
 export const AuthContext = createContext();
 
@@ -14,15 +14,12 @@ export function AuthProvider({ children }) {
 
       if (token && storedUser) {
         try {
-          // 1. Set token immediately for any pending requests
-          axios.setToken(token);
+          setToken(token);
           
-          // 2. Parse user safely
           const parsedUser = JSON.parse(storedUser);
           if (parsedUser) {
             setUser(parsedUser);
           } else {
-            // Invalid user data, clear everything
             logout();
           }
         } catch (error) {
@@ -30,7 +27,6 @@ export function AuthProvider({ children }) {
           logout();
         }
       } else {
-        // No token or user found
         setLoading(false);
       }
       setLoading(false);
@@ -41,14 +37,14 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     try {
-      const res = await axios.post("/auth/login", credentials);
+      const res = await api.post("/auth/login", credentials);
       const { token, user } = res.data;
 
       if (!token || !user) throw new Error("Invalid response from server");
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-      axios.setToken(token);
+      setToken(token);
       setUser(user);
       
       return res;
@@ -61,9 +57,8 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    axios.setToken(null);
+    setToken(null);
     setUser(null);
-    // Optional: Redirect is handled by the UI consuming this context
   };
 
   return (

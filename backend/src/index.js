@@ -17,32 +17,37 @@ const app = express();
 
 connectDB();
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Too many requests, try again later.'
-});
-
+// 1. Standard CORS Configuration
 const corsOptions = {
-  // In production, use the strict URL. In development, dynamically allow the requesting origin.
   origin: process.env.NODE_ENV === 'production' 
     ? process.env.FRONTEND_URL 
-    : true, 
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true
 };
+app.use(cors(corsOptions));
 
+// 2. Security Middleware
 app.use(helmet({ 
   crossOriginResourcePolicy: false,
   crossOriginOpenerPolicy: false 
 }));
 
-app.use(cors(corsOptions));
-app.use(limiter);
+// 3. Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many requests, try again later.'
+});
+app.use('/api', limiter);
+
+// 4. Body Parsing
 app.use(express.json());
 
+// 5. Health Checks
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/api/ping', (req, res) => res.json({ message: 'Backend awake' }));
 
+// 6. API Routes
 app.use('/api/products', productRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/stock-logs', stockLogRoutes);
@@ -51,9 +56,14 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 
+// 7. Fallback Error Handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+
+// Explicitly bind the server to IPv4 to prevent IPv6 routing mismatches
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`Backend securely running on http://127.0.0.1:${PORT}`);
+});
