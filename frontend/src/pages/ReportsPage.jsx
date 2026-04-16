@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   Target,
   ChevronRight,
+  Wallet
 } from "lucide-react";
 
 const Peso = () => (
@@ -21,6 +22,8 @@ export default function ReportsPage() {
   const [timeFrame, setTimeFrame] = useState("7d");
   const [reportData, setReportData] = useState({
     totalRevenue: 0,
+    totalExpenses: 0,
+    netProfit: 0,
     totalSales: 0,
     topProducts: [],
     lowStockCount: 0,
@@ -31,23 +34,38 @@ export default function ReportsPage() {
   const fetchReport = async () => {
     setLoading(true);
     try {
-      const salesRes = await api.get("/sales");
-      const prodRes = await api.get("/products");
+      const [salesRes, prodRes, expRes] = await Promise.all([
+        api.get("/sales"),
+        api.get("/products"),
+        api.get("/expenses"),
+      ]);
 
       const sales = salesRes.data.sales || salesRes.data || [];
       const products = prodRes.data.products || prodRes.data || [];
+      const expenses = expRes.data || [];
 
       const now = new Date();
-      const filteredSales = sales.filter((s) => {
-        const saleDate = new Date(s.date);
-        if (timeFrame === "24h") return now - saleDate < 24 * 60 * 60 * 1000;
-        if (timeFrame === "7d") return now - saleDate < 7 * 24 * 60 * 60 * 1000;
+
+      // Abstracted time filter for reusability across datasets
+      const filterByTimeFrame = (dateString) => {
+        const itemDate = new Date(dateString);
+        if (timeFrame === "24h") return now - itemDate < 24 * 60 * 60 * 1000;
+        if (timeFrame === "7d") return now - itemDate < 7 * 24 * 60 * 60 * 1000;
         return true;
-      });
+      };
+
+      const filteredSales = sales.filter((s) => filterByTimeFrame(s.date));
+      const filteredExpenses = expenses.filter((e) =>
+        filterByTimeFrame(e.date),
+      );
 
       const revenue = filteredSales.reduce(
         (acc, curr) => acc + (curr.totalPrice || 0),
-        0
+        0,
+      );
+      const totalExp = filteredExpenses.reduce(
+        (acc, curr) => acc + (curr.amount || 0),
+        0,
       );
 
       const productMap = {};
@@ -65,6 +83,8 @@ export default function ReportsPage() {
 
       setReportData({
         totalRevenue: revenue,
+        totalExpenses: totalExp,
+        netProfit: revenue - totalExp,
         totalSales: filteredSales.length,
         lowStockCount: products.filter((p) => p.lowStock).length,
         avgSaleValue:
@@ -180,6 +200,18 @@ export default function ReportsPage() {
           icon={Package}
           color="text-red-600"
           sub="Attention"
+        />
+        <ReportStat
+          label="Net Profit"
+          value={
+            <>
+              <Peso />
+              {reportData.netProfit.toLocaleString()}
+            </>
+          }
+          icon={Wallet}
+          color="text-emerald-600"
+          sub="Bottom Line"
         />
       </div>
 

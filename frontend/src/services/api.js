@@ -1,9 +1,8 @@
+// frontend/src/services/api.js
 import axios from 'axios';
 
 const api = axios.create({
-  // Hardcoded to the NEW port 5001
-  baseURL: 'http://localhost:5001/api', 
-  // Increased to 10 seconds
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api', 
   timeout: 10000, 
 });
 

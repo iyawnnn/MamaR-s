@@ -11,6 +11,7 @@ import {
   UserCircle,
   X,
   Wheat,
+  Receipt,
 } from "lucide-react";
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -23,7 +24,9 @@ const Sidebar = ({ isOpen, onClose }) => {
     } else {
       document.body.style.overflow = "unset";
     }
-    return () => { document.body.style.overflow = "unset"; };
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen]);
 
   const handleLogout = () => {
@@ -35,6 +38,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: "Dashboard", icon: LayoutDashboard, path: "/" },
     { name: "Inventory", icon: Croissant, path: "/products" },
     { name: "Sales (POS)", icon: ShoppingBag, path: "/sales" },
+    { name: "Expenses", icon: Receipt, path: "/expenses" },
     { name: "Stock Logs", icon: History, path: "/stock-history" },
     { name: "Reports", icon: BarChart3, path: "/reports" },
   ];

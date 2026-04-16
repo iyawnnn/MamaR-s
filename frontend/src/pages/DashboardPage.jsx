@@ -13,6 +13,7 @@ import {
   History,
   ArrowRight,
   Plus,
+  PiggyBank,
 } from "lucide-react";
 import api from "../services/api";
 
@@ -85,6 +86,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     totalRevenue: 0,
+    totalExpenses: 0,
+    netProfit: 0,
     totalOrders: 0,
     totalItemsSold: 0,
     averageOrderValue: 0,
@@ -96,17 +99,33 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const salesRes = await api.get("/sales");
+        const [salesRes, productsRes, expensesRes] = await Promise.all([
+          api.get("/sales"),
+          api.get("/products"),
+          api.get("/expenses"),
+        ]);
+
         const sales = salesRes.data.sales || salesRes.data || [];
+        const allProducts = productsRes.data.products || productsRes.data || [];
+        const expenses = expensesRes.data || [];
+
         const totalRev = sales.reduce(
           (acc, curr) => acc + (curr.totalPrice || 0),
-          0
+          0,
+        );
+        const totalExp = expenses.reduce(
+          (acc, curr) => acc + (curr.amount || 0),
+          0,
         );
         const totalItems = sales.reduce(
           (acc, curr) => acc + (curr.quantity || 0),
-          0
+          0,
         );
         const totalOrds = sales.length;
+
+        // Revenue minus operational costs
+        const netProfit = totalRev - totalExp;
+
         const recent = sales
           .sort((a, b) => new Date(b.date) - new Date(a.date))
           .slice(0, 4);
@@ -121,11 +140,10 @@ const Dashboard = () => {
           productPerformance[pName].revenue += sale.totalPrice || 0;
         });
 
-        const productsRes = await api.get("/products");
-        const allProducts = productsRes.data.products || productsRes.data || [];
-
         setData({
           totalRevenue: totalRev,
+          totalExpenses: totalExp,
+          netProfit: netProfit,
           totalOrders: totalOrds,
           totalItemsSold: totalItems,
           averageOrderValue: totalOrds > 0 ? totalRev / totalOrds : 0,
@@ -212,6 +230,18 @@ const Dashboard = () => {
           subtext="Per Customer"
           icon={TrendingUp}
           type="default"
+        />
+        <StatsCard
+          title="Net Profit"
+          value={
+            <>
+              <Peso />
+              {data.netProfit.toLocaleString()}
+            </>
+          }
+          subtext="Revenue - Expenses"
+          icon={PiggyBank}
+          type="success"
         />
       </div>
 
