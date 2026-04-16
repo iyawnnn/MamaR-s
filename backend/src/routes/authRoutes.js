@@ -1,11 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // your User model
-require('dotenv').config();
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js'; 
+import 'dotenv/config';
 
-// Signup
+const router = express.Router();
+
 router.post('/signup', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -24,8 +24,6 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-
-// 🔹 Login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -41,12 +39,10 @@ router.post('/login', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
-    // Return token AND user info
     res.json({ token, user: { name: user.name, email: user.email, role: user.role, _id: user._id } });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-
-module.exports = router;
+export default router;
