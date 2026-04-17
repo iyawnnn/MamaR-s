@@ -19,15 +19,14 @@ export default function DefaultLayout({
 
   return (
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
-      {/* 1. Desktop Left Sidebar - Fixed Surface */}
-      <div className="hidden lg:flex w-64 shrink-0 border-r border-border/40 bg-background z-20">
+      {/* 1. Desktop Left Sidebar - Now using the slightly darker muted background */}
+      <div className="hidden lg:flex w-64 shrink-0 border-r border-border/40 bg-muted/30 z-20">
         <Sidebar />
       </div>
 
-      {/* 2. Main Workspace - Recessed Canvas */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-muted/30 relative z-10">
-        {/* Mobile & Tablet Header - Glassmorphism style */}
-        <header className="xl:hidden flex items-center justify-between p-4 shrink-0 border-b border-border/40 bg-background/60 backdrop-blur-md z-30">
+      {/* 2. Main Workspace - Now using the primary light background */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background relative z-10">
+        <header className="xl:hidden flex items-center justify-between p-4 shrink-0 border-b border-border/40 bg-muted/30 backdrop-blur-md z-30">
           <Sheet open={isLeftOpen} onOpenChange={setIsLeftOpen}>
             <SheetTrigger asChild>
               <Button
@@ -41,14 +40,13 @@ export default function DefaultLayout({
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="p-0 w-72 border-none bg-background shadow-2xl"
+              className="p-0 w-72 border-none bg-muted/30 shadow-2xl"
             >
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <Sidebar onClose={() => setIsLeftOpen(false)} />
             </SheetContent>
           </Sheet>
 
-          {/* Minimalist Mobile Logo */}
           <div className="flex items-center gap-3">
             <img src={logoUrl} alt="Logo" className="h-7 w-7 object-contain" />
           </div>
@@ -66,7 +64,7 @@ export default function DefaultLayout({
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="p-0 w-[85vw] sm:w-96 border-none bg-background shadow-2xl"
+              className="p-0 w-[85vw] sm:w-96 border-none bg-muted/30 shadow-2xl"
             >
               <SheetTitle className="sr-only">Context Menu</SheetTitle>
               <RightSidebar />
@@ -74,14 +72,13 @@ export default function DefaultLayout({
           </Sheet>
         </header>
 
-        {/* The Action Area - Content flows over the recessed background */}
         <div className="flex-1 overflow-y-auto px-4 pb-8 pt-6 md:px-10 md:pb-12 md:pt-10 scroll-smooth no-scrollbar">
           <div className="mx-auto w-full max-w-[1400px]">{children}</div>
         </div>
       </main>
 
-      {/* 3. Desktop Right Sidebar - Fixed Surface */}
-      <div className="hidden xl:flex w-80 shrink-0 border-l border-border/40 bg-background z-20">
+      {/* 3. Desktop Right Sidebar - Now using the slightly darker muted background */}
+      <div className="hidden xl:flex w-80 shrink-0 border-l border-border/40 bg-muted/30 z-20">
         <RightSidebar />
       </div>
     </div>

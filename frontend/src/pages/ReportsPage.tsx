@@ -1,25 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api, { fetchOrders, fetchExpenses, createExpense } from "@/services/api";
+import { useQuery } from "@tanstack/react-query";
+import api, { fetchOrders, fetchExpenses } from "@/services/api";
 import { formatPHP } from "@/utils/currency";
 import {
   TrendingUp,
   PieChart,
   Download,
   Loader2,
-  ShoppingBag,
   Wallet,
-  Plus,
-  ReceiptText,
-  Activity
+  ReceiptText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export default function ReportsPage() {
-  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [timeFrame, setTimeFrame] = useState("30d");
   
@@ -32,36 +25,10 @@ export default function ReportsPage() {
     rawSales: [],
   });
 
-  const [expenseForm, setExpenseForm] = useState({
-    description: "",
-    amount: "",
-    category: "Ingredients"
-  });
-
-  // Fetch Expenses using React Query
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
     queryFn: fetchExpenses
   });
-
-  // Expense Mutation
-  const expenseMutation = useMutation({
-    mutationFn: createExpense,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      setExpenseForm({ description: "", amount: "", category: "Ingredients" });
-      fetchReport(); // Refresh the analytics
-    }
-  });
-
-  const handleExpenseSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!expenseForm.description || !expenseForm.amount) return;
-    expenseMutation.mutate({
-      ...expenseForm,
-      amount: Number(expenseForm.amount)
-    });
-  };
 
   const fetchReport = async () => {
     setLoading(true);
@@ -115,7 +82,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchReport();
-  }, [timeFrame, expenses]); // Refetch when expenses change
+  }, [timeFrame, expenses]);
 
   const exportToCSV = () => {
     if (reportData.rawSales.length === 0) return alert("No data available");
@@ -146,15 +113,13 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-8 p-8 pt-6 animate-in fade-in duration-500">
-      
-      {/* Header & Time Filter */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-border/40">
         <div className="space-y-1">
-          <h1 className="text-4xl sm:text-5xl tracking-tight font-black text-foreground" style={{ fontFamily: '"Instrument Serif", serif' }}>
+          <h1 className="text-4xl sm:text-5xl tracking-tight font-black text-foreground font-serif">
             Accounting Hub
           </h1>
           <p className="text-muted-foreground font-sans text-sm font-medium">
-            Unified financial ledger and business intelligence.
+            Business intelligence and revenue tracking.
           </p>
         </div>
 
@@ -175,7 +140,6 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Main KPI Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-card p-6 rounded-3xl border border-border/40 shadow-sm flex flex-col justify-between">
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2"><TrendingUp className="w-3 h-3 text-primary"/> Gross Revenue</p>
@@ -194,143 +158,44 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="bg-transparent border-b border-border/40 w-full justify-start rounded-none h-auto p-0">
-          <TabsTrigger value="analytics" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-4 py-3 text-xs uppercase tracking-widest font-black">
-            <Activity className="w-4 h-4 mr-2" /> Sales Analytics
-          </TabsTrigger>
-          <TabsTrigger value="ledger" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-4 py-3 text-xs uppercase tracking-widest font-black">
-            <ReceiptText className="w-4 h-4 mr-2" /> Expense Ledger
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ANALYTICS TAB */}
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2 bg-card rounded-3xl border border-border/40 shadow-sm overflow-hidden flex flex-col">
-              <div className="p-6 border-b border-border/40 bg-muted/10">
-                <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                  <PieChart className="w-4 h-4 text-primary" /> Top Performers
-                </h3>
-              </div>
-              <table className="w-full text-sm text-left">
-                <thead className="text-[10px] text-muted-foreground uppercase font-black bg-background border-b border-border/40">
-                  <tr>
-                    <th className="px-6 py-4">Item Name</th>
-                    <th className="px-6 py-4 text-center">Volume</th>
-                    <th className="px-6 py-4 text-right">Revenue Generated</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40 bg-card">
-                  {reportData.topProducts.map((p: any, i) => (
-                    <tr key={i} className="hover:bg-muted/10 transition-colors">
-                      <td className="px-6 py-4 font-bold text-foreground text-sm">{p.productName}</td>
-                      <td className="px-6 py-4 text-center text-muted-foreground font-black text-sm">{p.quantity}</td>
-                      <td className="px-6 py-4 text-right font-black text-primary text-sm">{formatPHP(p.totalPrice)}</td>
-                    </tr>
-                  ))}
-                  {reportData.topProducts.length === 0 && (
-                    <tr><td colSpan={3} className="text-center py-8 text-muted-foreground text-xs font-bold">No sales data for this period.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="bg-card rounded-3xl p-8 border border-border/40 shadow-sm flex flex-col justify-center min-h-[300px]">
-              <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Export Data</h3>
-              <p className="text-muted-foreground text-xs mb-8 font-medium">Download current timeframe as CSV for accounting.</p>
-              <Button onClick={exportToCSV} className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20">
-                <Download className="w-4 h-4 mr-2" /> Download Report
-              </Button>
-            </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 bg-card rounded-3xl border border-border/40 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-border/40 bg-muted/10">
+            <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-primary" /> Top Performers
+            </h3>
           </div>
-        </TabsContent>
+          <table className="w-full text-sm text-left">
+            <thead className="text-[10px] text-muted-foreground uppercase font-black bg-background border-b border-border/40">
+              <tr>
+                <th className="px-6 py-4">Item Name</th>
+                <th className="px-6 py-4 text-center">Volume</th>
+                <th className="px-6 py-4 text-right">Revenue Generated</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40 bg-card">
+              {reportData.topProducts.map((p: any, i) => (
+                <tr key={i} className="hover:bg-muted/10 transition-colors">
+                  <td className="px-6 py-4 font-bold text-foreground text-sm">{p.productName}</td>
+                  <td className="px-6 py-4 text-center text-muted-foreground font-black text-sm">{p.quantity}</td>
+                  <td className="px-6 py-4 text-right font-black text-primary text-sm">{formatPHP(p.totalPrice)}</td>
+                </tr>
+              ))}
+              {reportData.topProducts.length === 0 && (
+                <tr><td colSpan={3} className="text-center py-8 text-muted-foreground text-xs font-bold">No sales data for this period.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        {/* LEDGER TAB */}
-        <TabsContent value="ledger" className="space-y-6">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="bg-card rounded-3xl border border-border/40 p-6 shadow-sm self-start">
-              <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-primary" /> Log Expense
-              </h3>
-              <form onSubmit={handleExpenseSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Description</Label>
-                  <Input 
-                    required 
-                    value={expenseForm.description}
-                    onChange={e => setExpenseForm({...expenseForm, description: e.target.value})}
-                    placeholder="e.g. Flour Delivery" 
-                    className="h-12 bg-muted/20 border-border/40 font-bold" 
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Amount</Label>
-                    <Input 
-                      required 
-                      type="number" 
-                      value={expenseForm.amount}
-                      onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})}
-                      className="h-12 bg-muted/20 border-border/40 font-bold" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Category</Label>
-                    <select 
-                      value={expenseForm.category}
-                      onChange={e => setExpenseForm({...expenseForm, category: e.target.value})}
-                      className="w-full h-12 px-3 rounded-xl border border-border/40 bg-muted/20 font-bold text-sm outline-none focus:border-primary"
-                    >
-                      <option>Ingredients</option>
-                      <option>Packaging</option>
-                      <option>Utilities</option>
-                      <option>Equipment</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-                </div>
-                <Button type="submit" disabled={expenseMutation.isPending} className="w-full h-12 mt-2 bg-foreground text-background hover:bg-foreground/90 font-black rounded-xl text-[10px] uppercase tracking-widest">
-                  {expenseMutation.isPending ? "Saving..." : "Record Expense"}
-                </Button>
-              </form>
-            </div>
-
-            <div className="xl:col-span-2 bg-card rounded-3xl border border-border/40 shadow-sm overflow-hidden flex flex-col">
-              <div className="p-6 border-b border-border/40 bg-muted/10 flex justify-between items-center">
-                <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em]">Recent Outflows</h3>
-              </div>
-              <div className="overflow-x-auto max-h-[500px]">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-[10px] text-muted-foreground uppercase font-black bg-background border-b border-border/40 sticky top-0">
-                    <tr>
-                      <th className="px-6 py-4">Date</th>
-                      <th className="px-6 py-4">Description</th>
-                      <th className="px-6 py-4">Category</th>
-                      <th className="px-6 py-4 text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/40 bg-card">
-                    {expenses.slice().reverse().map((e: IExpense, i: number) => (
-                      <tr key={i} className="hover:bg-muted/10 transition-colors">
-                        <td className="px-6 py-4 text-[10px] font-black uppercase text-muted-foreground">{new Date(e.date).toLocaleDateString()}</td>
-                        <td className="px-6 py-4 font-bold text-foreground text-sm">{e.description}</td>
-                        <td className="px-6 py-4">
-                          <span className="px-2 py-1 bg-muted/50 text-[10px] uppercase tracking-widest font-black rounded-md text-muted-foreground">{e.category}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right font-black text-destructive text-sm">{formatPHP(e.amount)}</td>
-                      </tr>
-                    ))}
-                    {expenses.length === 0 && (
-                      <tr><td colSpan={4} className="text-center py-8 text-muted-foreground text-xs font-bold">No expenses logged.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        <div className="bg-card rounded-3xl p-8 border border-border/40 shadow-sm flex flex-col justify-center min-h-[300px]">
+          <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Export Data</h3>
+          <p className="text-muted-foreground text-xs mb-8 font-medium">Download current timeframe as CSV for accounting.</p>
+          <Button onClick={exportToCSV} className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20">
+            <Download className="w-4 h-4 mr-2" /> Download Report
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

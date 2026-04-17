@@ -4,6 +4,7 @@ import { IOrder } from "@/types";
 import {
   useReactTable,
   getCoreRowModel,
+  getPaginationRowModel,
   flexRender,
 } from "@tanstack/react-table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,10 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { columns } from "./orders/columns";
 import OrderEntrySheet from "@/components/OrderEntrySheet";
-import { Plus, ShoppingBag, Clock, CheckCircle2 } from "lucide-react";
+import { Plus, LayoutGrid, Clock, PackageCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useReactToPrint } from "react-to-print";
 import ReceiptPrint from "@/components/ReceiptPrint";
@@ -85,6 +85,12 @@ export default function OrdersPage() {
     data: orders,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
     meta: {
       updateStatus: handleStatusChange,
       fulfillAndPrint: handleFulfillAndPrint,
@@ -92,92 +98,63 @@ export default function OrdersPage() {
   });
 
   return (
-    <div className="flex-1 space-y-10 p-8 pt-6 bg-muted/30 min-h-screen">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-border/60">
-        <div className="space-y-1">
-          <h2
-            className="text-5xl md:text-6xl font-black text-foreground tracking-tighter leading-none"
-            style={{ fontFamily: '"Instrument Serif", serif' }}
-          >
+    <div className="flex-1 space-y-8 p-8 pt-6 min-h-screen">
+      
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+        <div className="space-y-2">
+          <h1 className="text-5xl sm:text-6xl font-serif font-black text-primary tracking-tighter leading-none">
             Active Orders
-          </h2>
-          <p className="text-muted-foreground font-medium flex items-center gap-2">
+          </h1>
+          <p className="text-muted-foreground font-semibold flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            Processing {stats.all} active orders today
+            Real-time fulfillment operations.
           </p>
         </div>
+        
         <Button
           onClick={() => setIsSheetOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl uppercase tracking-[0.2em] text-[10px] h-14 px-8 shadow-xl shadow-primary/20 transition-all active:scale-95 flex gap-3"
+          className="group h-14 pl-6 pr-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-all duration-300 shadow-lg flex items-center gap-4 border-none"
         >
-          <Plus className="w-5 h-5" /> New Order
+          <span className="text-[10px] font-black uppercase tracking-[0.25em]">New Pre-Order</span>
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
+            <Plus className="w-5 h-5 text-white" aria-hidden="true" />
+          </div>
         </Button>
       </div>
 
-      {/* KPI Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          {
-            label: "Total Active",
-            value: stats.all,
-            icon: ShoppingBag,
-            color: "text-foreground",
-          },
-          {
-            label: "Pending",
-            value: stats.pending,
-            icon: Clock,
-            color: "text-amber-600",
-          },
-          {
-            label: "Preparing",
-            value: stats.preparing,
-            icon: Clock,
-            color: "text-blue-600",
-          },
-          {
-            label: "Ready",
-            value: stats.ready,
-            icon: CheckCircle2,
-            color: "text-primary",
-          },
+          { label: "Total Active", value: stats.all, icon: LayoutGrid, isPrimary: false },
+          { label: "Pending", value: stats.pending, icon: Clock, isPrimary: false },
+          { label: "Preparing", value: stats.preparing, icon: PackageCheck, isPrimary: false },
+          { label: "Ready", value: stats.ready, icon: CheckCircle2, isPrimary: true },
         ].map((kpi, idx) => (
-          <Card
+          <div
             key={idx}
-            className="rounded-3xl border-none shadow-sm bg-card hover:shadow-md transition-all group overflow-hidden relative"
+            className="flex flex-col p-6 rounded-xl border border-border/60 bg-card relative overflow-hidden shadow-sm"
           >
-            <div
-              className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${kpi.color}`}
-            >
-              <kpi.icon className="w-12 h-12" />
-            </div>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">
-                {kpi.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div
-                className={`text-4xl font-black tracking-tighter ${kpi.color}`}
-                style={{ fontFamily: '"Instrument Serif", serif' }}
-              >
-                {kpi.value.toString().padStart(2, "0")}
-              </div>
-            </CardContent>
-          </Card>
+            <kpi.icon 
+              className={`absolute -right-6 -bottom-6 w-32 h-32 opacity-[0.04] ${kpi.isPrimary ? 'text-primary' : 'text-foreground'}`} 
+              aria-hidden="true" 
+            />
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] relative z-10">
+              {kpi.label}
+            </span>
+            <span className={`mt-4 text-5xl font-black tracking-tighter relative z-10 ${kpi.isPrimary ? 'text-primary' : 'text-foreground'}`}>
+              {kpi.value.toString().padStart(2, "0")}
+            </span>
+          </div>
         ))}
       </div>
 
-      {/* Main Layout Area */}
       <Tabs
         defaultValue="all"
-        className="space-y-8"
+        className="space-y-6"
         onValueChange={setActiveTab}
       >
-        <TabsList className="bg-muted p-1.5 rounded-[20px] w-fit h-auto gap-1 border border-border/50">
+        <TabsList className="bg-muted/40 p-1.5 rounded-xl w-fit h-auto gap-2 border border-border/40">
           {[
-            { id: "all", label: "All Active" },
+            { id: "all", label: "All Records" },
             { id: "pending", label: "Pending" },
             { id: "preparing", label: "Preparing" },
             { id: "ready", label: "Ready" },
@@ -185,18 +162,16 @@ export default function OrdersPage() {
             <TabsTrigger
               key={t.id}
               value={t.id}
-              className="rounded-[14px] px-8 py-3 text-[10px] font-black uppercase tracking-widest transition-all
-                       data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg shadow-primary/20
-                       data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-muted-foreground/10"
+              className="rounded-lg px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border-border/40 text-muted-foreground hover:text-foreground border border-transparent"
             >
               {t.label}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <div className="rounded-[32px] border border-border/40 bg-card overflow-hidden shadow-sm shadow-primary/5">
+        <div className="rounded-xl border border-border/40 bg-card overflow-hidden shadow-sm">
           <Table>
-            <TableHeader className="bg-muted/40 border-b border-border/50">
+            <TableHeader className="bg-muted/20 border-b border-border/40">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
@@ -205,7 +180,7 @@ export default function OrdersPage() {
                   {headerGroup.headers.map((header) => (
                     <TableHead
                       key={header.id}
-                      className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground h-14 px-6"
+                      className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground h-16 px-6"
                     >
                       {header.isPlaceholder
                         ? null
@@ -218,15 +193,15 @@ export default function OrdersPage() {
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody className="divide-y divide-border/30">
+            <TableBody className="divide-y divide-border/20">
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="border-none hover:bg-muted/10 transition-colors group"
+                    className="border-none hover:bg-muted/10 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="py-6 px-6">
+                      <TableCell key={cell.id} className="py-5 px-6 align-middle">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -239,15 +214,44 @@ export default function OrdersPage() {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-48 text-center text-muted-foreground italic font-black text-xl"
-                    style={{ fontFamily: '"Instrument Serif", serif' }}
+                    className="h-48 text-center"
                   >
-                    No active orders found.
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <LayoutGrid className="w-8 h-8 mb-4 opacity-20" />
+                      <span className="text-sm font-semibold tracking-tight">No active orders matching this criteria.</span>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+
+          <div className="flex items-center justify-between px-8 py-5 border-t border-border/40 bg-muted/5">
+            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+              Page <span className="text-foreground">{table.getState().pagination.pageIndex + 1}</span> of{" "}
+              {table.getPageCount() || 1}
+            </span>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                className="h-9 px-4 text-[10px] uppercase font-bold tracking-widest rounded-lg border-border/40 hover:bg-muted/20"
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                className="h-9 px-4 text-[10px] uppercase font-bold tracking-widest rounded-lg border-border/40 hover:bg-muted/20"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </div>
       </Tabs>
 

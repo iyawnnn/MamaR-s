@@ -12,6 +12,7 @@ import ReportsPage from "./pages/ReportsPage";
 import CatalogPage from "./pages/CatalogPage"; 
 import InventoryPage from "./pages/InventoryPage";
 import ReconciliationPage from "./pages/ReconciliationPage";
+import ExpensePage from "./pages/ExpensePage"; // Added import
 
 const LoadingScreen = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-background text-primary gap-4">
@@ -39,7 +40,6 @@ function App() {
   return (
     <DefaultLayout>
       <Routes>
-        {/* Industry standard redirect from root to explicit dashboard */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         
@@ -48,9 +48,9 @@ function App() {
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/stock-history" element={<StockHistoryPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/expenses" element={<ExpensePage />} /> {/* Registered Route */}
         <Route path="/reconciliation" element={<ReconciliationPage />} />
 
-        {/* Catch-all for 404s */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </DefaultLayout>

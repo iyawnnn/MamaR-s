@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { format, differenceInHours } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Clock } from "lucide-react";
+import { Settings2, Clock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,12 +24,14 @@ export const columns: ColumnDef<IOrder>[] = [
 
       return (
         <div className="flex flex-col gap-1">
-          <div className="font-medium text-foreground">{format(date, "MMM dd, yyyy")}</div>
+          <div className="text-sm font-semibold text-foreground tracking-tight">
+            {format(date, "MMM dd, yyyy")}
+          </div>
           {isUrgent && (
-            <Badge className="w-fit bg-red-600 text-white border-0 text-[10px] py-0 h-4 px-1.5 animate-pulse">
-              <Clock className="w-2.5 h-2.5 mr-1" />
+            <span className="w-fit inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-red-600 border border-red-100 mt-1">
+              <Clock className="w-3 h-3 mr-1.5" />
               {hoursRemaining}h left
-            </Badge>
+            </span>
           )}
         </div>
       );
@@ -37,41 +39,58 @@ export const columns: ColumnDef<IOrder>[] = [
   },
   {
     id: "orderInfo",
-    header: "Order & Customer",
+    header: "Order ID & Customer",
     cell: ({ row }) => {
       const id = row.original._id.slice(-6).toUpperCase();
       const name = row.original.customerName;
       return (
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">#{id}</span>
-          <span className="font-bold text-foreground">{name}</span>
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            #{id}
+          </span>
+          <span className="text-sm font-semibold text-foreground tracking-tight">
+            {name}
+          </span>
         </div>
       );
     },
   },
   {
     accessorKey: "customerContact",
-    header: "Contact",
+    header: "Contact Details",
     cell: ({ row }) => {
-      return <span className="text-muted-foreground tabular-nums">{row.original.customerContact || '---'}</span>
-    }
+      return (
+        <span className="text-xs font-medium text-muted-foreground tracking-wide block">
+          {row.original.customerContact || "---"}
+        </span>
+      );
+    },
   },
   {
     id: "products",
-    header: "Products",
+    header: "Items",
     cell: ({ row }) => {
       const items = row.original.items;
       return (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1.5">
           {items.map((item, idx) => (
-            <div key={idx} className="text-xs text-foreground/80 leading-tight">
-              <span className="font-black text-primary">{item.quantity}x</span> {item.product?.name}
-              {item.product?.variant && <span className="text-muted-foreground ml-1">- {item.product.variant}</span>}
+            <div key={idx} className="text-xs text-foreground/80 font-medium flex items-start gap-2">
+              <span className="font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md text-[10px]">
+                {item.quantity}x
+              </span>
+              <span className="mt-0.5">
+                {item.product?.name}
+                {item.product?.variant && (
+                  <span className="text-muted-foreground ml-1">
+                    ({item.product.variant})
+                  </span>
+                )}
+              </span>
             </div>
           ))}
         </div>
       );
-    }
+    },
   },
   {
     accessorKey: "paymentStatus",
@@ -81,14 +100,19 @@ export const columns: ColumnDef<IOrder>[] = [
       const amount = row.original.totalAmount;
       
       return (
-        <div className="flex flex-col">
-           <span className="font-bold text-foreground">{formatPHP(amount)}</span>
-          <Badge 
-            variant="outline" 
-            className={`w-fit text-[10px] px-1 h-4 border-0 ${status === PaymentStatus.PAID ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-foreground tracking-tight">
+            {formatPHP(amount)}
+          </span>
+          <span
+            className={`w-fit text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border ${
+              status === PaymentStatus.PAID
+                ? "bg-green-50 text-green-700 border-green-200"
+                : "bg-muted/30 text-muted-foreground border-border/40"
+            }`}
           >
             {status}
-          </Badge>
+          </span>
         </div>
       );
     },
@@ -101,7 +125,7 @@ export const columns: ColumnDef<IOrder>[] = [
       
       if (status === OrderStatus.PENDING) {
         return (
-          <Badge className="bg-[#fffae9] text-[#af0e0e] border border-[#af0e0e]/20 hover:bg-[#fffae9] font-bold shadow-none">
+          <Badge variant="outline" className="bg-transparent text-muted-foreground border-border/60 shadow-none font-semibold text-[10px] uppercase tracking-widest py-1 px-2.5 rounded-md">
             {status}
           </Badge>
         );
@@ -109,14 +133,14 @@ export const columns: ColumnDef<IOrder>[] = [
       
       if (status === OrderStatus.READY) {
         return (
-          <Badge className="bg-primary text-primary-foreground hover:bg-primary font-bold shadow-none">
+          <Badge className="bg-primary/10 text-primary shadow-none font-semibold text-[10px] uppercase tracking-widest py-1 px-2.5 rounded-md border border-primary/20 hover:bg-primary/20">
             {status}
           </Badge>
         );
       }
 
       return (
-        <Badge variant="secondary" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-bold">
+        <Badge variant="secondary" className="bg-muted text-foreground hover:bg-muted/80 shadow-none font-semibold text-[10px] uppercase tracking-widest py-1 px-2.5 rounded-md border border-border/40">
           {status}
         </Badge>
       );
@@ -130,37 +154,46 @@ export const columns: ColumnDef<IOrder>[] = [
       const fulfillAndPrint = (table.options.meta as any)?.fulfillAndPrint;
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-secondary">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-card border-border">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            
-            {order.status !== OrderStatus.READY && order.status !== OrderStatus.FULFILLED && (
-              <DropdownMenuItem 
-                onClick={() => updateStatus(order._id, OrderStatus.READY)}
-              >
-                Mark as Ready
-              </DropdownMenuItem>
-            )}
-            
-            {order.status === OrderStatus.READY && (
-              <DropdownMenuItem 
-                onClick={() => fulfillAndPrint(order)}
-                className="text-primary font-bold"
-              >
-                Fulfill & Print Receipt
-              </DropdownMenuItem>
-            )}
+        <div className="flex justify-end pr-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-md hover:bg-muted/20 border border-transparent hover:border-border/40 transition-colors">
+                <Settings2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-white border-border/40 shadow-lg rounded-lg p-1.5">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold px-2 pb-1.5">
+                Operations
+              </DropdownMenuLabel>
+              
+              {order.status !== OrderStatus.READY && order.status !== OrderStatus.FULFILLED && (
+                <DropdownMenuItem 
+                  onClick={() => updateStatus(order._id, OrderStatus.READY)}
+                  className="text-sm font-medium rounded-md cursor-pointer focus:bg-muted/10 transition-colors"
+                >
+                  Mark as Ready
+                </DropdownMenuItem>
+              )}
+              
+              {order.status === OrderStatus.READY && (
+                <DropdownMenuItem 
+                  onClick={() => fulfillAndPrint(order)}
+                  className="text-foreground font-bold text-sm rounded-md cursor-pointer focus:bg-muted/10 transition-colors"
+                >
+                  Fulfill & Print
+                </DropdownMenuItem>
+              )}
 
-            <DropdownMenuItem className="text-destructive">Cancel Order</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <div className="h-px bg-border/20 my-1 mx-2" />
+              
+              <DropdownMenuItem className="text-destructive text-sm font-medium rounded-md cursor-pointer focus:bg-red-50 focus:text-destructive transition-colors">
+                Cancel Order
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       );
     },
   },
-];
+];

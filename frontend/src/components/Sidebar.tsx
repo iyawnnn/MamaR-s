@@ -11,6 +11,8 @@ import {
   BookOpen,
   Boxes,
   CheckSquare,
+  ReceiptText,
+  Wallet
 } from "lucide-react";
 import logoUrl from "@/assets/logo/mama-rs-logo.png";
 
@@ -36,25 +38,24 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   const inventoryItems = [
     { name: "Product Catalog", icon: BookOpen, path: "/catalog" },
     { name: "Stock Levels", icon: Boxes, path: "/inventory" },
+    { name: "Expenses", icon: Wallet, path: "/expenses" },
     { name: "Audit Logs", icon: Clock, path: "/stock-history" },
-    { name: "Accounting", icon: FileText, path: "/reports" },
+    { name: "Reports", icon: FileText, path: "/reports" },
   ];
 
   return (
-    <aside className="flex h-full w-full flex-col bg-background text-foreground transition-all duration-300 border-r border-border/40">
-      {/* Centered Minimalist Logo */}
+    <aside className="flex h-full w-full flex-col bg-transparent text-foreground transition-all duration-300 border-r border-border/40">
       <div className="flex h-24 items-center justify-center my-3">
         <div className="rounded-3xl">
           <img
             src={logoUrl}
-            alt="Mama R's"
+            alt="Mama R's Application Logo"
             className="pt-3 h-32 w-32 object-contain"
           />
         </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-6 py-4 space-y-8 no-scrollbar">
-        {/* Operations Section */}
         <div>
           <p className="mb-4 px-2 text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground/40">
             Operations
@@ -66,7 +67,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
           </div>
         </div>
 
-        {/* Inventory & Data Section */}
         <div>
           <p className="mb-4 px-2 text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground/40">
             Data & Finance
@@ -79,7 +79,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
         </div>
       </nav>
 
-      {/* Refined Logout Footer */}
       <div className="shrink-0 p-6">
         <Button
           variant="ghost"
@@ -97,7 +96,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   );
 };
 
-/* Internal Helper Component for Links */
 const SidebarLink = ({ item, onClose }: { item: any; onClose?: () => void }) => (
   <NavLink
     to={item.path}
