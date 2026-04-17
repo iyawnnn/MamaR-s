@@ -1,11 +1,15 @@
 import mongoose, { Schema } from 'mongoose';
-import { IOrder, OrderStatus, PaymentStatus } from '../types';
+import { IOrder, OrderStatus, PaymentStatus } from '../types/index.js';
 
 const OrderItemSchema = new Schema({
   product: { 
     type: Schema.Types.ObjectId, 
-    ref: 'Product', 
+    ref: 'InventoryItem', // FIXED: Was 'Product'
     required: true 
+  },
+  variant: {
+    type: String, // ADDED: So the DB saves "Small", "Large", etc.
+    trim: true
   },
   quantity: { 
     type: Number, 

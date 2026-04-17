@@ -49,7 +49,8 @@ export enum PaymentStatus {
 }
 
 export interface IOrderItem {
-  product: Types.ObjectId; // Refers to IInventoryItem
+  product: Types.ObjectId; 
+  variant?: string;
   quantity: number;
   priceAtTimeOfOrder: number;
 }

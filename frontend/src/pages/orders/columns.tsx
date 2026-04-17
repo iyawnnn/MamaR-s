@@ -68,7 +68,13 @@ export const columns: ColumnDef<IOrder>[] = [
 
       return (
         <DropdownMenu>
-          {/* ... Trigger code remains exactly the same ... */}
+          {/* THE MISSING TRIGGER HAS BEEN RESTORED HERE */}
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-zinc-950 border-zinc-800">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             
@@ -80,7 +86,6 @@ export const columns: ColumnDef<IOrder>[] = [
               </DropdownMenuItem>
             )}
             
-            {/* UPDATE THIS BUTTON HERE */}
             {order.status === OrderStatus.READY && (
               <DropdownMenuItem 
                 onClick={() => fulfillAndPrint(order)}

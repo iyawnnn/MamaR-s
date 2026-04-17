@@ -32,8 +32,8 @@ export default function OrdersPage() {
   const receiptRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => receiptRef.current,
-    onAfterPrint: () => setPrintOrder(null), // Clear the data after printing
+    contentRef: receiptRef, // Pass the ref directly using the new API
+    onAfterPrint: () => setPrintOrder(null),
   });
 
   const loadOrders = useCallback(async () => {

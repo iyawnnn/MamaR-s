@@ -6,7 +6,7 @@ const stockLogSchema = new Schema<IStockLog>({
   productName: String,
   changeType: {
     type: String,
-    enum: ["Restock", "Sale", "Adjustment"],
+    enum: ["Restock", "Sale", "Adjustment", "Fulfillment", "Cancelled Order"],
     default: "Adjustment",
   },
   previousStock: Number,
