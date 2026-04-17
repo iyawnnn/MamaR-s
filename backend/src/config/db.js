@@ -5,13 +5,16 @@ const connectDB = async () => {
     mongoose.set('bufferCommands', false);
     
     const conn = await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000
     });
     
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    // Fallback log for different Mongoose driver versions
+    const host = conn.connection.host || conn.connection.client.s.url || 'Unknown Host';
+    console.log(`MongoDB Connected: ${host}`);
   } catch (error) {
     console.error(`MongoDB Connection Error: ${error.message}`);
-    console.log("Check if your IP address has changed or if the Atlas cluster is paused.");
+    console.log("CRITICAL: Check your MongoDB Atlas Network Access IP Whitelist.");
     process.exit(1);
   }
 };
