@@ -1,8 +1,9 @@
+import { Request, Response } from "express";
 import Sale from "../models/Sale.js";
 import Product from "../models/InventoryItem.js";
 import StockLog from "../models/StockLog.js";
 
-export const recordSale = async (req, res) => {
+export const recordSale = async (req: Request, res: Response) => {
   try {
     const {
       productId,
@@ -28,7 +29,7 @@ export const recordSale = async (req, res) => {
       }
 
       const variantIndex = product.variants.findIndex(
-        (v) => v.name === variantName
+        (v: any) => v.name === variantName
       );
       if (variantIndex === -1) {
         return res.status(400).json({ message: "Size not found." });
@@ -81,29 +82,29 @@ export const recordSale = async (req, res) => {
       productName: productNameToRecord,
       changeType: "Sale",
       previousStock: product.hasVariants
-        ? product.variants.find((v) => v.name === variantName).stock + quantity
+        ? product.variants.find((v: any) => v.name === variantName)!.stock + quantity
         : product.stock + quantity,
       changeAmount: quantity,
       newStock: product.hasVariants
-        ? product.variants.find((v) => v.name === variantName).stock
+        ? product.variants.find((v: any) => v.name === variantName)!.stock
         : product.stock,
       date: sale.date,
     }).save();
 
     res.status(201).json({ message: "Sale recorded", sale });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
     res.status(400).json({ message: err.message });
   }
 };
 
-export const getAllSales = async (req, res) => {
+export const getAllSales = async (req: Request, res: Response) => {
   try {
     const sales = await Sale.find()
       .populate("productId", "name")
       .sort({ date: -1 });
     res.status(200).json(sales);
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
 };

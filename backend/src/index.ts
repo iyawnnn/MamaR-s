@@ -15,9 +15,6 @@ import expenseRoutes from './routes/expenseRoutes.js';
 
 const app = express();
 
-connectDB();
-
-// 1. Standard CORS Configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? process.env.FRONTEND_URL 
@@ -26,13 +23,11 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// 2. Security Middleware
 app.use(helmet({ 
   crossOriginResourcePolicy: false,
   crossOriginOpenerPolicy: false 
 }));
 
-// 3. Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -40,14 +35,17 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// 4. Body Parsing
 app.use(express.json());
 
-// 5. Health Checks
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-app.get('/api/ping', (req, res) => res.json({ message: 'Backend awake' }));
+// Global Request Logger
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
-// 6. API Routes
+app.get('/api/health', (req: express.Request, res: express.Response) => res.json({ status: 'ok' }));
+app.get('/api/ping', (req: express.Request, res: express.Response) => res.json({ message: 'Backend awake' }));
+
 app.use('/api/products', productRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/stock-logs', stockLogRoutes);
@@ -56,15 +54,20 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 
-// 7. Fallback Error Handler
-app.use((req, res) => {
+app.use((req: express.Request, res: express.Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Replace the bottom of your index.js with this:
 const PORT = process.env.PORT || 5001;
 
-// 0.0.0.0 ensures the backend doesn't accidentally block local requests
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Backend securely running on port ${PORT}`);
-});
+// Strictly bind the server listener to the database connection promise
+connectDB()
+  .then(() => {
+    app.listen(Number(PORT), '0.0.0.0', () => {
+      console.log(`🚀 Backend securely running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Critical Failure: Database connection aborted.", error);
+    process.exit(1);
+  });

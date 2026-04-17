@@ -1,3 +1,4 @@
+// frontend/src/pages/DashboardPage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,16 +15,26 @@ import {
   ArrowRight,
   Plus,
   PiggyBank,
+  LucideIcon
 } from "lucide-react";
 import api from "../services/api";
+import { ISale, IInventoryItem, IExpense } from "../types";
 
-const Peso = () => (
+const Peso: React.FC = () => (
   <span className="font-sans font-semibold text-current opacity-90 mr-0.5">
     ₱
   </span>
 );
 
-const StatsCard = ({ title, value, subtext, icon: Icon, type = "default" }) => {
+interface StatsCardProps {
+  title: string;
+  value: React.ReactNode | number | string;
+  subtext?: string;
+  icon: LucideIcon;
+  type?: "default" | "success" | "warning" | "info";
+}
+
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, subtext, icon: Icon, type = "default" }) => {
   const styles = {
     default: {
       bg: "bg-white",
@@ -81,10 +92,28 @@ const StatsCard = ({ title, value, subtext, icon: Icon, type = "default" }) => {
   );
 };
 
-const Dashboard = () => {
+interface TopProduct {
+  name: string;
+  sold: number;
+  revenue: number;
+}
+
+interface DashboardData {
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  totalOrders: number;
+  totalItemsSold: number;
+  averageOrderValue: number;
+  recentSales: ISale[];
+  inventory: IInventoryItem[];
+  topProducts: TopProduct[];
+}
+
+const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
+  const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState<DashboardData>({
     totalRevenue: 0,
     totalExpenses: 0,
     netProfit: 0,
@@ -100,42 +129,31 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const [salesRes, productsRes, expensesRes] = await Promise.all([
-          api.get("/sales"),
-          api.get("/products"),
-          api.get("/expenses"),
+          api.get<{ sales: ISale[] } | ISale[]>("/sales"),
+          api.get<{ products: IInventoryItem[] } | IInventoryItem[]>("/products"),
+          api.get<IExpense[]>("/expenses"),
         ]);
 
-        const sales = salesRes.data.sales || salesRes.data || [];
-        const allProducts = productsRes.data.products || productsRes.data || [];
+        const sales = ('sales' in salesRes.data ? salesRes.data.sales : salesRes.data) || [];
+        const allProducts = ('products' in productsRes.data ? productsRes.data.products : productsRes.data) || [];
         const expenses = expensesRes.data || [];
 
-        const totalRev = sales.reduce(
-          (acc, curr) => acc + (curr.totalPrice || 0),
-          0,
-        );
-        const totalExp = expenses.reduce(
-          (acc, curr) => acc + (curr.amount || 0),
-          0,
-        );
-        const totalItems = sales.reduce(
-          (acc, curr) => acc + (curr.quantity || 0),
-          0,
-        );
+        const totalRev = sales.reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
+        const totalExp = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+        const totalItems = sales.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
         const totalOrds = sales.length;
-
-        // Revenue minus operational costs
         const netProfit = totalRev - totalExp;
 
-        const recent = sales
-          .sort((a, b) => new Date(b.date) - new Date(a.date))
+        const recent = [...sales]
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 4);
 
-        const productPerformance = {};
+        const productPerformance: Record<string, TopProduct> = {};
         sales.forEach((sale) => {
-          const pName =
-            sale.productName || sale.productId?.name || "Unknown Item";
-          if (!productPerformance[pName])
+          const pName = sale.productName || "Unknown Item";
+          if (!productPerformance[pName]) {
             productPerformance[pName] = { name: pName, sold: 0, revenue: 0 };
+          }
           productPerformance[pName].sold += sale.quantity || 0;
           productPerformance[pName].revenue += sale.totalPrice || 0;
         });
@@ -162,16 +180,16 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
       </div>
     );
+  }
 
   return (
     <div className="space-y-6 sm:space-y-10 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="text-left">
           <h2 className="text-3xl sm:text-4xl font-black text-stone-800 tracking-tight font-display">
@@ -191,16 +209,10 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-6">
         <StatsCard
           title="Revenue"
-          value={
-            <>
-              <Peso />
-              {data.totalRevenue.toLocaleString()}
-            </>
-          }
+          value={<><Peso />{data.totalRevenue.toLocaleString()}</>}
           subtext="Gross Sales"
           icon={DollarSign}
           type="success"
@@ -221,24 +233,14 @@ const Dashboard = () => {
         />
         <StatsCard
           title="Avg. Sale"
-          value={
-            <>
-              <Peso />
-              {data.averageOrderValue.toFixed(0)}
-            </>
-          }
+          value={<><Peso />{data.averageOrderValue.toFixed(0)}</>}
           subtext="Per Customer"
           icon={TrendingUp}
           type="default"
         />
         <StatsCard
           title="Net Profit"
-          value={
-            <>
-              <Peso />
-              {data.netProfit.toLocaleString()}
-            </>
-          }
+          value={<><Peso />{data.netProfit.toLocaleString()}</>}
           subtext="Revenue - Expenses"
           icon={PiggyBank}
           type="success"
@@ -246,7 +248,6 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
-        {/* Recent Activity */}
         <div className="xl:col-span-2 flex flex-col min-w-0">
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm flex-1 flex flex-col overflow-hidden">
             <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/40">
@@ -264,10 +265,7 @@ const Dashboard = () => {
               <table className="w-full text-sm text-left">
                 <tbody className="divide-y divide-stone-50">
                   {data.recentSales.map((sale, i) => (
-                    <tr
-                      key={i}
-                      className="hover:bg-stone-50/50 transition-colors"
-                    >
+                    <tr key={i} className="hover:bg-stone-50/50 transition-colors">
                       <td className="px-6 py-5 text-[10px] text-stone-400 font-black uppercase whitespace-nowrap">
                         {new Date(sale.date).toLocaleDateString(undefined, {
                           month: "short",
@@ -281,8 +279,7 @@ const Dashboard = () => {
                         {sale.productName}
                       </td>
                       <td className="px-6 py-5 font-black text-emerald-600 text-right text-xs sm:text-sm whitespace-nowrap">
-                        <Peso />
-                        {sale.totalPrice?.toLocaleString()}
+                        <Peso />{sale.totalPrice?.toLocaleString()}
                       </td>
                     </tr>
                   ))}
@@ -292,14 +289,12 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Terminal Section */}
         <div className="flex flex-col gap-6">
           <div className="bg-stone-900 rounded-2xl p-8 text-white shadow-xl flex flex-col justify-between h-full min-h-[320px]">
             <div>
               <h3 className="font-black uppercase text-[11px] tracking-[0.3em] text-stone-500 flex items-center gap-3 mb-8">
                 <ClipboardList className="w-4 h-4 text-amber-500" /> Terminal
               </h3>
-
               <div className="space-y-4">
                 <button
                   onClick={() => navigate("/sales")}
@@ -307,30 +302,24 @@ const Dashboard = () => {
                 >
                   <Plus className="w-4 h-4" /> New Sale Transaction
                 </button>
-
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => navigate("/products")}
                     className="py-5 bg-stone-800 hover:bg-stone-700 text-stone-200 font-black rounded-xl flex flex-col items-center gap-3 transition-all active:scale-95 border border-stone-700/50 cursor-pointer"
                   >
                     <Package className="w-5 h-5 text-stone-400" />
-                    <span className="text-[9px] uppercase tracking-widest">
-                      Inventory
-                    </span>
+                    <span className="text-[9px] uppercase tracking-widest">Inventory</span>
                   </button>
                   <button
                     onClick={() => navigate("/stock-history")}
                     className="py-5 bg-stone-800 hover:bg-stone-700 text-stone-200 font-black rounded-xl flex flex-col items-center gap-3 transition-all active:scale-95 border border-stone-700/50 cursor-pointer"
                   >
                     <History className="w-5 h-5 text-stone-400" />
-                    <span className="text-[9px] uppercase tracking-widest">
-                      Logs
-                    </span>
+                    <span className="text-[9px] uppercase tracking-widest">Logs</span>
                   </button>
                 </div>
               </div>
             </div>
-
             <div className="pt-8 mt-4 border-t border-stone-800/50">
               <div className="flex items-center justify-between opacity-40">
                 <span className="text-[9px] font-black tracking-widest uppercase italic">
@@ -342,7 +331,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Top Products Section */}
         <div className="xl:col-span-3">
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 sm:p-8 h-full">
             <div className="flex items-center justify-between mb-8 pb-4 border-b border-stone-50">
@@ -359,7 +347,6 @@ const Dashboard = () => {
                 Insights
               </button>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4 sm:gap-6">
               {data.topProducts.map((prod, index) => (
                 <div
@@ -379,8 +366,7 @@ const Dashboard = () => {
                       {prod.sold} SOLD
                     </p>
                     <p className="text-[10px] text-emerald-600 font-black">
-                      <Peso />
-                      {prod.revenue.toLocaleString()}
+                      <Peso />{prod.revenue.toLocaleString()}
                     </p>
                   </div>
                 </div>

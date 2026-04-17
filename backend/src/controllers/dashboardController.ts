@@ -1,3 +1,4 @@
+import { Request, Response } from 'express';
 import Sale from '../models/Sale.js';
 import Product from '../models/InventoryItem.js';
 
@@ -9,7 +10,7 @@ const getDayRange = (date = new Date()) => {
   return { start, end };
 };
 
-export const getDashboardStats = async (req, res) => {
+export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const { start, end } = getDayRange();
 
@@ -46,13 +47,13 @@ export const getDashboardStats = async (req, res) => {
       lowStockCount
     });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("Dashboard Stats Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
 
-export const getSalesChart = async (req, res) => {
+export const getSalesChart = async (req: Request, res: Response) => {
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -72,7 +73,7 @@ export const getSalesChart = async (req, res) => {
     const data = sales.map(s => s.total);
 
     res.json({ labels, data });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Chart Error:", err);
     res.status(500).json({ message: err.message });
   }

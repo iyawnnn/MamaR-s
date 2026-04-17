@@ -1,6 +1,7 @@
+import { Request, Response } from 'express';
 import Sale from '../models/Sale.js';
 
-export const getDashboardStats = async (req, res) => {
+export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -20,16 +21,16 @@ export const getDashboardStats = async (req, res) => {
       dailySales: dailySales[0]?.total || 0,
       monthlySales: monthlySales[0]?.total || 0,
     });
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
 };
 
-export const getSalesOverTime = async (req, res) => {
+export const getSalesOverTime = async (req: Request, res: Response) => {
   try {
     const { start, end } = req.query;
-    const startDate = start ? new Date(start) : new Date(new Date().setDate(new Date().getDate() - 30));
-    const endDate = end ? new Date(end) : new Date();
+    const startDate = start ? new Date(start as string) : new Date(new Date().setDate(new Date().getDate() - 30));
+    const endDate = end ? new Date(end as string) : new Date();
 
     const sales = await Sale.aggregate([
       { $match: { date: { $gte: startDate, $lte: endDate } } },
@@ -46,7 +47,7 @@ export const getSalesOverTime = async (req, res) => {
     const data = sales.map(s => s.total);
 
     res.json({ labels, data });
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
 };
