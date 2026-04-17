@@ -1,4 +1,5 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
+import { IInventoryItem } from '../types/index.js';
 
 function toTitleCase(str = '') {
   return str.replace(/\w\S*/g, (txt) =>
@@ -6,13 +7,8 @@ function toTitleCase(str = '') {
   );
 }
 
-const itemSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Name required'],
-    unique: true,
-    trim: true
-  },
+const itemSchema = new Schema<IInventoryItem>({
+  name: { type: String, required: [true, 'Name required'], unique: true, trim: true },
   sellingPrice: { type: Number, default: 0 },
   stock: { type: Number, default: 0 },
   lowStockThreshold: { type: Number, default: 5 },
@@ -37,4 +33,4 @@ itemSchema.pre('save', function (next) {
 itemSchema.set('toJSON', { virtuals: true });
 itemSchema.set('toObject', { virtuals: true });
 
-export default mongoose.model('InventoryItem', itemSchema, 'products');
+export default mongoose.model<IInventoryItem>('InventoryItem', itemSchema, 'products');

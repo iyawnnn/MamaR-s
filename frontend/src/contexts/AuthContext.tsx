@@ -1,10 +1,19 @@
 import React, { createContext, useState, useEffect } from "react";
 import api, { setToken } from "../services/api";
+import { IUser } from "../types";
 
-export const AuthContext = createContext();
+export interface AuthContextType {
+  user: IUser | null;
+  setUser: React.Dispatch<React.SetStateAction<IUser | null>>;
+  login: (credentials: unknown) => Promise<any>;
+  logout: () => void;
+  loading: boolean;
+}
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<IUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,7 +35,7 @@ export function AuthProvider({ children }) {
     initAuth();
   }, []);
 
-  const login = async (credentials) => {
+  const login = async (credentials: unknown) => {
     try {
       const res = await api.post("/auth/login", credentials);
       const { token, user } = res.data;
@@ -41,7 +50,7 @@ export function AuthProvider({ children }) {
       return res;
     } catch (error) {
       console.error("Login failed inside AuthContext:", error);
-      throw error; // This forces the error back to the Login Page
+      throw error; 
     }
   };
 

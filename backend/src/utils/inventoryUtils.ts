@@ -1,23 +1,21 @@
-// Import the model FROM THE CONTROLLER
-const { Model: Product } = require('../controllers/productController');
+import Product from '../models/InventoryItem.js';
 
-exports.increaseStock = async (productId, amount) => {
+export const increaseStock = async (productId: string, amount: number) => {
   const product = await Product.findById(productId);
   if (!product) throw new Error('Product not found');
   
-  // Simple logic for now
   product.stock += amount; 
   await product.save();
   return product;
 };
 
-exports.decreaseStock = async (productId, amount, variantName = null) => {
+export const decreaseStock = async (productId: string, amount: number, variantName: string | null = null) => {
   const product = await Product.findById(productId);
   if (!product) throw new Error('Product not found');
 
   if (product.hasVariants) {
     if (!variantName) throw new Error('Size required');
-    const v = product.variants.find(v => v.name === variantName);
+    const v = product.variants.find((v: any) => v.name === variantName);
     if (!v) throw new Error('Size not found');
     if (v.stock < amount) throw new Error('Low stock');
     v.stock -= amount;

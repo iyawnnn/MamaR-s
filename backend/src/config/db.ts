@@ -9,10 +9,9 @@ const connectDB = async () => {
       connectTimeoutMS: 10000
     });
     
-    // Fallback log for different Mongoose driver versions
-    const host = conn.connection.host || conn.connection.client.s.url || 'Unknown Host';
+    const host = conn.connection.host || 'Unknown Host';
     console.log(`MongoDB Connected: ${host}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error(`MongoDB Connection Error: ${error.message}`);
     console.log("CRITICAL: Check your MongoDB Atlas Network Access IP Whitelist.");
     process.exit(1);

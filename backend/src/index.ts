@@ -38,13 +38,13 @@ app.use('/api', limiter);
 app.use(express.json());
 
 // Global Request Logger
-app.use((req, res, next) => {
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-app.get('/api/ping', (req, res) => res.json({ message: 'Backend awake' }));
+app.get('/api/health', (req: express.Request, res: express.Response) => res.json({ status: 'ok' }));
+app.get('/api/ping', (req: express.Request, res: express.Response) => res.json({ message: 'Backend awake' }));
 
 app.use('/api/products', productRoutes);
 app.use('/api/sales', salesRoutes);
@@ -54,7 +54,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 
-app.use((req, res) => {
+app.use((req: express.Request, res: express.Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
@@ -63,7 +63,7 @@ const PORT = process.env.PORT || 5001;
 // Strictly bind the server listener to the database connection promise
 connectDB()
   .then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`🚀 Backend securely running on port ${PORT}`);
     });
   })
