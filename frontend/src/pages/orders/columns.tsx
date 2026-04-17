@@ -1,8 +1,8 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { format, differenceInHours } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Clock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +19,59 @@ export const columns: ColumnDef<IOrder>[] = [
     header: "Fulfillment Date",
     cell: ({ row }) => {
       const date = new Date(row.getValue("targetDate"));
-      return <div className="font-medium">{format(date, "MMM dd, yyyy")}</div>;
+      const hoursRemaining = differenceInHours(date, new Date());
+      const isUrgent = hoursRemaining < 24 && hoursRemaining >= 0;
+
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="font-medium text-foreground">{format(date, "MMM dd, yyyy")}</div>
+          {isUrgent && (
+            <Badge className="w-fit bg-red-600 text-white border-0 text-[10px] py-0 h-4 px-1.5 animate-pulse">
+              <Clock className="w-2.5 h-2.5 mr-1" />
+              {hoursRemaining}h left
+            </Badge>
+          )}
+        </div>
+      );
     },
   },
   {
-    accessorKey: "customerName",
-    header: "Customer",
+    id: "orderInfo",
+    header: "Order & Customer",
+    cell: ({ row }) => {
+      const id = row.original._id.slice(-6).toUpperCase();
+      const name = row.original.customerName;
+      return (
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">#{id}</span>
+          <span className="font-bold text-foreground">{name}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "customerContact",
+    header: "Contact",
+    cell: ({ row }) => {
+      return <span className="text-muted-foreground tabular-nums">{row.original.customerContact || '---'}</span>
+    }
+  },
+  {
+    id: "products",
+    header: "Products",
+    cell: ({ row }) => {
+      const items = row.original.items;
+      return (
+        <div className="flex flex-col gap-0.5">
+          {items.map((item, idx) => (
+            <div key={idx} className="text-xs text-foreground/80 leading-tight">
+              <span className="font-black text-primary">{item.quantity}x</span> {item.product?.name}
+              {item.product?.variant && <span className="text-muted-foreground ml-1">- {item.product.variant}</span>}
+            </div>
+          ))}
+        </div>
+      );
+    }
   },
   {
     accessorKey: "paymentStatus",
@@ -34,11 +81,11 @@ export const columns: ColumnDef<IOrder>[] = [
       const amount = row.original.totalAmount;
       
       return (
-        <div className="flex items-center gap-2">
-          <span>{formatPHP(amount)}</span>
+        <div className="flex flex-col">
+           <span className="font-bold text-foreground">{formatPHP(amount)}</span>
           <Badge 
             variant="outline" 
-            className={`border-0 ${status === PaymentStatus.PAID ? 'bg-green-900/20 text-green-400' : 'bg-zinc-800 text-zinc-400'}`}
+            className={`w-fit text-[10px] px-1 h-4 border-0 ${status === PaymentStatus.PAID ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}
           >
             {status}
           </Badge>
@@ -50,9 +97,26 @@ export const columns: ColumnDef<IOrder>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
+      const status = row.getValue("status") as OrderStatus;
+      
+      if (status === OrderStatus.PENDING) {
+        return (
+          <Badge className="bg-[#fffae9] text-[#af0e0e] border border-[#af0e0e]/20 hover:bg-[#fffae9] font-bold shadow-none">
+            {status}
+          </Badge>
+        );
+      }
+      
+      if (status === OrderStatus.READY) {
+        return (
+          <Badge className="bg-primary text-primary-foreground hover:bg-primary font-bold shadow-none">
+            {status}
+          </Badge>
+        );
+      }
+
       return (
-        <Badge variant="secondary" className="bg-zinc-900 text-zinc-300 hover:bg-zinc-800">
+        <Badge variant="secondary" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-bold">
           {status}
         </Badge>
       );
@@ -62,23 +126,21 @@ export const columns: ColumnDef<IOrder>[] = [
     id: "actions",
     cell: ({ row, table }) => {
       const order = row.original;
-      // Extract both mutation functions safely
       const updateStatus = (table.options.meta as any)?.updateStatus;
       const fulfillAndPrint = (table.options.meta as any)?.fulfillAndPrint;
 
       return (
         <DropdownMenu>
-          {/* THE MISSING TRIGGER HAS BEEN RESTORED HERE */}
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-secondary">
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-zinc-950 border-zinc-800">
+          <DropdownMenuContent align="end" className="bg-card border-border">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             
-            {order.status !== OrderStatus.READY && (
+            {order.status !== OrderStatus.READY && order.status !== OrderStatus.FULFILLED && (
               <DropdownMenuItem 
                 onClick={() => updateStatus(order._id, OrderStatus.READY)}
               >
@@ -89,16 +151,16 @@ export const columns: ColumnDef<IOrder>[] = [
             {order.status === OrderStatus.READY && (
               <DropdownMenuItem 
                 onClick={() => fulfillAndPrint(order)}
-                className="text-green-400 font-bold"
+                className="text-primary font-bold"
               >
                 Fulfill & Print Receipt
               </DropdownMenuItem>
             )}
 
-            <DropdownMenuItem className="text-red-400">Cancel Order</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive">Cancel Order</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
     },
   },
-];
+];

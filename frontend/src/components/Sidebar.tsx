@@ -43,12 +43,12 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   return (
     <aside className="flex h-full w-full flex-col bg-background text-foreground transition-all duration-300 border-r border-border/40">
       {/* Centered Minimalist Logo */}
-      <div className="flex h-24 shrink-0 items-center justify-center">
+      <div className="flex h-24 items-center justify-center my-3">
         <div className="rounded-3xl">
           <img
             src={logoUrl}
             alt="Mama R's"
-            className="h-12 w-12 object-contain"
+            className="pt-3 h-32 w-32 object-contain"
           />
         </div>
       </div>
