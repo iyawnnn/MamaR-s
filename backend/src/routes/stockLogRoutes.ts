@@ -1,7 +1,10 @@
 import express from 'express';
 import StockLog from '../models/StockLog.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+router.use(protect);
 
 router.get('/', async (req, res) => {
   try {

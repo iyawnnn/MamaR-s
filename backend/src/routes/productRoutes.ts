@@ -1,8 +1,11 @@
 import express from "express";
 import * as productController from "../controllers/productController.js";
 import StockLog from "../models/StockLog.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+router.use(protect);
 
 if (!productController.getLowStock) {
   console.error("CRITICAL ERROR: productController.getLowStock is missing!");

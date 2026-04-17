@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import {
 import { DollarSign, ShoppingBag, TrendingUp, Loader2, Package, Layers, Calendar, Award, ClipboardList, ArrowRight, Plus, PiggyBank, History } from "lucide-react";
 import api, { fetchOrders } from "@/services/api";
 import { IOrder, IInventoryItem, IExpense } from "@/types";

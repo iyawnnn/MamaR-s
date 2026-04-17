@@ -10,6 +10,7 @@ import {
   FileText,
   LogOut,
   Settings,
+  ClipboardList
 } from "lucide-react";
 import logoUrl from "@/assets/logo/mama-rs-logo.png";
 
@@ -27,6 +28,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
   const menuItems = [
     { name: "Dashboard", icon: Layout, path: "/" },
+    { name: "Orders", icon: ClipboardList, path: "/orders" },
     { name: "Inventory", icon: Package, path: "/products" },
     { name: "Sales (POS)", icon: DollarSign, path: "/sales" },
     { name: "Expenses", icon: CreditCard, path: "/expenses" },

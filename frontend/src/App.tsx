@@ -13,6 +13,7 @@ import SalesPage from "./pages/SalesPage";
 import StockHistoryPage from "./pages/StockHistoryPage";
 import ReportsPage from "./pages/ReportsPage";
 import ExpensePage from "./pages/ExpensePage";
+import OrdersPage from "./pages/OrdersPage";
 
 // Minimalist loading screen matching the new high-contrast theme
 const LoadingScreen = () => (
@@ -48,6 +49,7 @@ function App() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/sales" element={<SalesPage />} />
         <Route path="/stock-history" element={<StockHistoryPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route
           path="/expenses"

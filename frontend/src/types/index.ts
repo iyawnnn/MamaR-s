@@ -43,8 +43,8 @@ export interface IOrder {
   customerName: string;
   customerContact?: string;
   items: IOrderItem[];
-  status: string;
-  paymentStatus: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
   totalAmount: number;
   amountPaid: number;
   targetDate: string;
@@ -72,4 +72,18 @@ export interface IUser {
   role: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  PREPARING = 'PREPARING',
+  READY = 'READY',
+  FULFILLED = 'FULFILLED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PARTIAL = 'PARTIAL',
+  PAID = 'PAID'
 }

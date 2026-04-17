@@ -6,7 +6,6 @@ import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 
 import productRoutes from './routes/productRoutes.js';
-import salesRoutes from './routes/salesRoutes.js';
 import stockLogRoutes from './routes/stockLogRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
