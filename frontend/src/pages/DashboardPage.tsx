@@ -192,7 +192,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6 sm:space-y-10 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="text-left">
-          <h2 className="text-3xl sm:text-4xl font-black text-stone-800 tracking-tight font-display">
+          <h2 className="font-serif text-5xl text-foreground tracking-tight">
             Dashboard
           </h2>
           <p className="text-stone-500 font-medium text-sm mt-1">

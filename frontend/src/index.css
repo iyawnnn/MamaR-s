@@ -1,22 +1,117 @@
 @import "tailwindcss";
-
-@theme {
-  --color-primary: #e26a35;
-  --color-primary-hover: #c95b2b;
-  
-  --color-background: #121212;
-  --color-surface: #1e1e1e;
-  --color-surface-hover: #2a2a2a;
-  
-  --color-text-main: #f5f5f5;
-  --color-text-muted: #a0a0a0;
-  
-  --color-border: #333333;
-}
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/inter";
 
 @layer base {
   html, body {
-    @apply bg-background text-text-main antialiased m-0 p-0;
+    @apply bg-background text-foreground antialiased m-0 p-0;
     font-family: 'Inter', system-ui, sans-serif;
   }
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+:root {
+  /* Base Canvas: Your Brand Creme */
+  --background: #fffae9;
+  /* Main Text: Deep espresso for high-contrast readability */
+  --foreground: #2b1d1d;
+  
+  /* Elevated elements like Cards and Dropdowns */
+  --card: #ffffff;
+  --card-foreground: #2b1d1d;
+  --popover: #ffffff;
+  --popover-foreground: #2b1d1d;
+  
+  /* Primary Actions: Your Brand Red */
+  --primary: #af0e0e;
+  --primary-foreground: #fffae9;
+  
+  /* Secondary Surfaces (Slightly darker creme for hover states) */
+  --secondary: #f2ead3;
+  --secondary-foreground: #af0e0e;
+  
+  /* Muted text and backgrounds */
+  --muted: #f2ead3;
+  --muted-foreground: #7a6363;
+  
+  /* Accents */
+  --accent: #f2ead3;
+  --accent-foreground: #af0e0e;
+  
+  /* Destructive actions */
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  
+  /* Borders and Inputs */
+  --border: #e6d8c3;
+  --input: #e6d8c3;
+  --ring: #af0e0e;
+  
+  /* Charts */
+  --chart-1: #af0e0e;
+  --chart-2: #c95b2b;
+  --chart-3: #e26a35;
+  --chart-4: #f59e0b;
+  --chart-5: #10b981;
+  
+  /* Standard Border Radius */
+  --radius: 0.5rem;
+  
+  /* Sidebar Specifics */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #2b1d1d;
+  --sidebar-primary: #af0e0e;
+  --sidebar-primary-foreground: #fffae9;
+  --sidebar-accent: #f2ead3;
+  --sidebar-accent-foreground: #af0e0e;
+  --sidebar-border: #e6d8c3;
+  --sidebar-ring: #af0e0e;
+}
+
+@theme inline {
+  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', serif;
+  --font-heading: 'Inter Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
