@@ -1,10 +1,15 @@
 import mongoose from 'mongoose';
 import User from '../src/models/User.js';
+import { IUser } from '../src/types/index.js';
 import 'dotenv/config';
 
 const createAdmin = async () => {
   try {
-    // Connect to the local bakery_db
+    if (!process.env.MONGO_URI) {
+      throw new Error('MONGO_URI is not defined in environment variables');
+    }
+
+    // Connect to the database
     await mongoose.connect(process.env.MONGO_URI);
     console.log('MongoDB Connected');
 
@@ -18,12 +23,14 @@ const createAdmin = async () => {
       await User.deleteOne({ email: adminEmail });
     }
 
-    const adminUser = new User({
+    const adminPayload: Partial<IUser> = {
       name: 'Local System Admin',
       email: adminEmail,
       password: adminPassword, 
       role: 'admin'
-    });
+    };
+
+    const adminUser = new User(adminPayload);
 
     await adminUser.save();
     console.log(`🎉 Success! You can now log in locally.`);

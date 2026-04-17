@@ -5,7 +5,10 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first nodemon --exec tsx src/index.ts",
-    "start": "node dist/index.js"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "seed:admin": "tsx scripts/createAdmin.ts",
+    "seed:products": "tsx scripts/seedProducts.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
