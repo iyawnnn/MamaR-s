@@ -19,12 +19,22 @@ import { columns } from "./orders/columns";
 import OrderEntrySheet from "@/components/OrderEntrySheet";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRef } from "react";
+import { useReactToPrint } from "react-to-print";
+import ReceiptPrint from "@/components/ReceiptPrint";
 
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [printOrder, setPrintOrder] = useState<IOrder | null>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    content: () => receiptRef.current,
+    onAfterPrint: () => setPrintOrder(null), // Clear the data after printing
+  });
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -51,22 +61,46 @@ export default function OrdersPage() {
     }
   };
 
+  const handleFulfillAndPrint = async (order: IOrder) => {
+    try {
+      // 1. Update the database
+      await updateOrderStatus(order._id, { status: "FULFILLED" });
+
+      // 2. Set the data into the hidden receipt
+      setPrintOrder(order);
+
+      // 3. Trigger the print dialog (timeout ensures React renders the new state first)
+      setTimeout(() => {
+        handlePrint();
+      }, 100);
+
+      // 4. Refresh the table
+      await loadOrders();
+    } catch (error) {
+      console.error("Fulfillment failed", error);
+    }
+  };
+
   const table = useReactTable({
     data: orders,
     columns,
     getCoreRowModel: getCoreRowModel(),
     meta: {
       updateStatus: handleStatusChange,
-    }
+      fulfillAndPrint: handleFulfillAndPrint, // Add this new property
+    },
   });
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2 pb-2 border-b border-border/40">
-        <h2 className="text-4xl tracking-tight font-black text-foreground" style={{ fontFamily: '"Instrument Serif", serif' }}>
+        <h2
+          className="text-4xl tracking-tight font-black text-foreground"
+          style={{ fontFamily: '"Instrument Serif", serif' }}
+        >
           Active Orders
         </h2>
-        <Button 
+        <Button
           onClick={() => setIsSheetOpen(true)}
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-xl uppercase tracking-widest text-[10px] gap-2 px-6 shadow-lg shadow-primary/20"
         >
@@ -74,28 +108,32 @@ export default function OrdersPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-4" onValueChange={setActiveTab}>
+      <Tabs
+        defaultValue="all"
+        className="space-y-4"
+        onValueChange={setActiveTab}
+      >
         <TabsList className="bg-transparent p-0 border-b border-zinc-800 w-full justify-start rounded-none h-auto">
-          <TabsTrigger 
-            value="all" 
+          <TabsTrigger
+            value="all"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2"
           >
             All Active
           </TabsTrigger>
-          <TabsTrigger 
-            value="pending" 
+          <TabsTrigger
+            value="pending"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2"
           >
             Pending
           </TabsTrigger>
-          <TabsTrigger 
-            value="preparing" 
+          <TabsTrigger
+            value="preparing"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2"
           >
             Preparing
           </TabsTrigger>
-          <TabsTrigger 
-            value="ready" 
+          <TabsTrigger
+            value="ready"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2"
           >
             Ready
@@ -106,15 +144,21 @@ export default function OrdersPage() {
           <Table>
             <TableHeader className="border-zinc-800">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="border-zinc-800 hover:bg-transparent">
+                <TableRow
+                  key={headerGroup.id}
+                  className="border-zinc-800 hover:bg-transparent"
+                >
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id} className="text-zinc-500 font-normal">
+                      <TableHead
+                        key={header.id}
+                        className="text-zinc-500 font-normal"
+                      >
                         {header.isPlaceholder
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     );
@@ -132,14 +176,20 @@ export default function OrdersPage() {
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="py-4">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center text-zinc-500">
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-zinc-500"
+                  >
                     No active orders found.
                   </TableCell>
                 </TableRow>
@@ -149,14 +199,15 @@ export default function OrdersPage() {
         </div>
       </Tabs>
 
-      <OrderEntrySheet 
-        open={isSheetOpen} 
-        onOpenChange={setIsSheetOpen} 
+      <OrderEntrySheet
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
         onSuccess={() => {
           setActiveTab("all");
           loadOrders();
-        }} 
+        }}
       />
+      <ReceiptPrint ref={receiptRef} order={printOrder} />
     </div>
   );
 }

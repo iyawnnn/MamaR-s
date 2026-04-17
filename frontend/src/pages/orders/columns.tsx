@@ -62,17 +62,13 @@ export const columns: ColumnDef<IOrder>[] = [
     id: "actions",
     cell: ({ row, table }) => {
       const order = row.original;
-      // Extract the mutation function safely
+      // Extract both mutation functions safely
       const updateStatus = (table.options.meta as any)?.updateStatus;
+      const fulfillAndPrint = (table.options.meta as any)?.fulfillAndPrint;
 
       return (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+          {/* ... Trigger code remains exactly the same ... */}
           <DropdownMenuContent align="end" className="bg-zinc-950 border-zinc-800">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             
@@ -84,12 +80,13 @@ export const columns: ColumnDef<IOrder>[] = [
               </DropdownMenuItem>
             )}
             
+            {/* UPDATE THIS BUTTON HERE */}
             {order.status === OrderStatus.READY && (
               <DropdownMenuItem 
-                onClick={() => updateStatus(order._id, OrderStatus.FULFILLED)}
-                className="text-green-400"
+                onClick={() => fulfillAndPrint(order)}
+                className="text-green-400 font-bold"
               >
-                Fulfill Order
+                Fulfill & Print Receipt
               </DropdownMenuItem>
             )}
 
