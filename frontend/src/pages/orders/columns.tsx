@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IOrder, OrderStatus, PaymentStatus } from "@/types";
-import { formatCurrency } from "@/utils/currency";
+import { formatPHP } from "@/utils/currency";
 
 export const columns: ColumnDef<IOrder>[] = [
   {
@@ -35,7 +35,7 @@ export const columns: ColumnDef<IOrder>[] = [
       
       return (
         <div className="flex items-center gap-2">
-          <span>{formatCurrency(amount)}</span>
+          <span>{formatPHP(amount)}</span>
           <Badge 
             variant="outline" 
             className={`border-0 ${status === PaymentStatus.PAID ? 'bg-green-900/20 text-green-400' : 'bg-zinc-800 text-zinc-400'}`}
