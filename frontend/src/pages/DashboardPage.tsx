@@ -1,22 +1,9 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  DollarSign,
-  ShoppingBag,
-  TrendingUp,
-  Loader2,
-  Package,
-  Layers,
-  Calendar,
-  Award,
-  ClipboardList,
-  ArrowRight,
-  Plus,
-  PiggyBank,
-  History,
-} from "lucide-react";
-import api from "@/services/api";
-import { ISale, IInventoryItem, IExpense } from "@/types";
+import { DollarSign, ShoppingBag, TrendingUp, Loader2, Package, Layers, Calendar, Award, ClipboardList, ArrowRight, Plus, PiggyBank, History } from "lucide-react";
+import api, { fetchOrders } from "@/services/api";
+import { IOrder, IInventoryItem, IExpense } from "@/types";
 import { AuthContext } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +25,7 @@ interface DashboardData {
   totalOrders: number;
   totalItemsSold: number;
   averageOrderValue: number;
-  recentSales: ISale[];
+  recentSales: IOrder[];
   inventory: IInventoryItem[];
   topProducts: TopProduct[];
 }
@@ -62,34 +49,41 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [salesRes, productsRes, expensesRes] = await Promise.all([
-          api.get<{ sales: ISale[] } | ISale[]>("/sales"),
+        const [allOrders, productsRes, expensesRes] = await Promise.all([
+          fetchOrders(),
           api.get<{ products: IInventoryItem[] } | IInventoryItem[]>("/products"),
           api.get<IExpense[]>("/expenses"),
         ]);
 
-        const sales = ('sales' in salesRes.data ? salesRes.data.sales : salesRes.data) || [];
+        const fulfilledOrders = allOrders.filter((o: IOrder) => o.status === 'FULFILLED');
         const allProducts = ('products' in productsRes.data ? productsRes.data.products : productsRes.data) || [];
         const expenses = expensesRes.data || [];
 
-        const totalRev = sales.reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
+        const totalRev = fulfilledOrders.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
         const totalExp = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-        const totalItems = sales.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
-        const totalOrds = sales.length;
+        
+        let totalItems = 0;
+        fulfilledOrders.forEach((o) => {
+          o.items.forEach(i => totalItems += (i.quantity || 0));
+        });
+        
+        const totalOrds = fulfilledOrders.length;
         const netProfit = totalRev - totalExp;
 
-        const recent = [...sales]
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        const recent = [...fulfilledOrders]
+          .sort((a, b) => new Date(b.targetDate || b.createdAt || new Date()).getTime() - new Date(a.targetDate || a.createdAt || new Date()).getTime())
           .slice(0, 4);
 
         const productPerformance: Record<string, TopProduct> = {};
-        sales.forEach((sale) => {
-          const pName = sale.productName || "Unknown Item";
-          if (!productPerformance[pName]) {
-            productPerformance[pName] = { name: pName, sold: 0, revenue: 0 };
-          }
-          productPerformance[pName].sold += (sale.quantity || 0);
-          productPerformance[pName].revenue += (sale.totalPrice || 0);
+        fulfilledOrders.forEach((order) => {
+          order.items.forEach((item) => {
+            const pName = (item.product as any)?.name || "Unknown Item";
+            if (!productPerformance[pName]) {
+              productPerformance[pName] = { name: pName, sold: 0, revenue: 0 };
+            }
+            productPerformance[pName].sold += (item.quantity || 0);
+            productPerformance[pName].revenue += ((item.quantity || 0) * (item.priceAtTimeOfOrder || 0));
+          });
         });
 
         setData({
@@ -188,26 +182,26 @@ const DashboardPage: React.FC = () => {
               <h3 className="font-black text-foreground uppercase text-[11px] tracking-[0.2em]">
                 Recent Activity
               </h3>
-              <Button variant="link" onClick={() => navigate("/sales")} className="text-[10px] font-black text-primary hover:text-primary/80 uppercase tracking-widest gap-2 p-0 h-auto">
+              <Button variant="link" onClick={() => navigate("/orders")} className="text-[10px] font-black text-primary hover:text-primary/80 uppercase tracking-widest gap-2 p-0 h-auto">
                 View All <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <tbody className="divide-y divide-border/40">
-                  {data.recentSales.map((sale, i) => (
+                  {data.recentSales.map((order, i) => (
                     <tr key={i} className="hover:bg-muted/30 transition-colors">
                       <td className="px-6 py-4 text-[10px] text-muted-foreground font-black uppercase whitespace-nowrap">
-                        {new Date(sale.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        {new Date((order as any).targetDate || (order as any).createdAt || new Date()).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                       </td>
                       <td className="px-6 py-4 font-bold text-foreground text-sm">
-                        {sale.customerName}
+                        {order.customerName}
                       </td>
                       <td className="px-6 py-4 text-muted-foreground text-[11px] italic truncate max-w-[150px]">
-                        {sale.productName}
+                        {order.items.map((item: any) => item.product?.name || 'Item').join(', ')}
                       </td>
                       <td className="px-6 py-4 font-black text-foreground text-right text-sm whitespace-nowrap">
-                        <Peso />{sale.totalPrice?.toLocaleString()}
+                        <Peso />{order.totalAmount?.toLocaleString()}
                       </td>
                     </tr>
                   ))}
@@ -259,10 +253,10 @@ const DashboardPage: React.FC = () => {
               </h3>
               <div className="space-y-4">
                 <Button
-                  onClick={() => navigate("/sales")}
+                  onClick={() => navigate("/orders")}
                   className="w-full py-7 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl transition-all flex items-center justify-center gap-3 active:scale-[0.98] text-[11px] uppercase tracking-widest shadow-lg shadow-primary/20"
                 >
-                  <Plus className="w-4 h-4" /> New Sale Transaction
+                  <Plus className="w-4 h-4" /> New Order
                 </Button>
                 <div className="grid grid-cols-2 gap-4">
                   <Button

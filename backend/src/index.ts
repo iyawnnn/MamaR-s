@@ -11,8 +11,8 @@ import stockLogRoutes from './routes/stockLogRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-import expenseRoutes from './routes/expenseRoutes.js;
-import orderRoutes from './routes/orderRoutes';
+import expenseRoutes from './routes/expenseRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 
 const app = express();
 

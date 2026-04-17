@@ -1,24 +1,24 @@
-import { Router } from 'express';
+import { Router } from "express";
 import { 
   createOrder, 
   getOrders, 
   updateOrderStatus, 
   deleteOrder 
-} from '../controllers/orderController';
-import { protect } from '../middleware/authMiddleware';
+} from "../controllers/orderController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
 router.use(protect);
 
-router.route('/')
+router.route("/")
   .post(createOrder)
   .get(getOrders);
 
-router.route('/:id/status')
+router.route("/:id/status")
   .patch(updateOrderStatus);
 
-router.route('/:id')
+router.route("/:id")
   .delete(deleteOrder);
 
 export default router;

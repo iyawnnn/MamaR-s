@@ -1,15 +1,27 @@
-import { Request, Response } from 'express';
-import Order from '../models/Order';
-import InventoryItem from '../models/InventoryItem';
-import StockLog from '../models/StockLog';
-import { OrderStatus, PaymentStatus } from '../types';
+import { Request, Response } from "express";
+import Order from "../models/Order.js";
+import Product from "../models/InventoryItem.js";
+import StockLog from "../models/StockLog.js";
+import { OrderStatus, PaymentStatus } from "../types/index.js";
 
-export const createOrder = async (req: Request, res: Response): Promise<void> => {
+export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { customerName, customerContact, items, targetDate, notes, amountPaid } = req.body;
+    const {
+      customerName,
+      customerContact,
+      items,
+      amountPaid = 0,
+      targetDate,
+      notes
+    } = req.body;
 
     let totalAmount = 0;
+
     for (const item of items) {
+      const product = await Product.findById(item.product);
+      if (!product) {
+        return res.status(404).json({ message: `Product ${item.product} not found` });
+      }
       totalAmount += item.quantity * item.priceAtTimeOfOrder;
     }
 
@@ -25,48 +37,51 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       customerContact,
       items,
       totalAmount,
-      amountPaid: amountPaid || 0,
+      amountPaid,
       targetDate,
       notes,
       status: OrderStatus.PENDING,
       paymentStatus
     });
 
-    const savedOrder = await order.save();
-    res.status(201).json(savedOrder);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to create order', error });
+    await order.save();
+    res.status(201).json({ message: "Order created", order });
+  } catch (err: any) {
+    console.error(err);
+    res.status(400).json({ message: err.message });
   }
 };
 
-export const getOrders = async (req: Request, res: Response): Promise<void> => {
+export const getOrders = async (req: Request, res: Response) => {
   try {
     const { status } = req.query;
     const filter = status ? { status } : {};
     
     const orders = await Order.find(filter)
-      .populate('items.product', 'name')
+      .populate("items.product", "name hasVariants variants")
       .sort({ targetDate: 1 });
       
     res.status(200).json(orders);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to retrieve orders', error });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-export const updateOrderStatus = async (req: Request, res: Response): Promise<void> => {
+export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status, paymentStatus, amountPaid } = req.body;
 
     const order = await Order.findById(id);
     if (!order) {
-      res.status(404).json({ message: 'Order not found' });
-      return;
+      return res.status(404).json({ message: "Order not found" });
     }
+
+    const previousStatus = order.status;
 
     if (status) order.status = status;
     if (paymentStatus) order.paymentStatus = paymentStatus;
+    
     if (amountPaid !== undefined) {
       order.amountPaid = amountPaid;
       if (order.amountPaid >= order.totalAmount) {
@@ -78,47 +93,53 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
       }
     }
 
-    // Deduct stock only when order transitions to FULFILLED
-    if (status === OrderStatus.FULFILLED && order.isModified('status')) {
+    // Only reduce inventory when moving into FULFILLED state
+    if (status === OrderStatus.FULFILLED && previousStatus !== OrderStatus.FULFILLED) {
       for (const item of order.items) {
-        const inventoryItem = await InventoryItem.findById(item.product);
-        if (inventoryItem) {
-          const previousStock = inventoryItem.stock;
-          inventoryItem.stock -= item.quantity;
-          await inventoryItem.save();
+        const product = await Product.findById(item.product);
+        
+        if (product) {
+          const previousStock = product.stock;
+          
+          if (product.stock < item.quantity) {
+             return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+          }
 
-          await StockLog.create({
-            productId: inventoryItem._id,
-            productName: inventoryItem.name,
-            changeType: 'Fulfillment',
+          product.stock -= item.quantity;
+          await product.save();
+
+          await new StockLog({
+            productId: product._id,
+            productName: product.name,
+            changeType: "Fulfillment",
             previousStock,
             changeAmount: -item.quantity,
-            newStock: inventoryItem.stock,
+            newStock: product.stock,
             date: new Date()
-          });
+          }).save();
         }
       }
     }
 
-    const updatedOrder = await order.save();
-    res.status(200).json(updatedOrder);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to update order', error });
+    await order.save();
+    res.status(200).json({ message: "Order updated", order });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
   }
 };
 
-export const deleteOrder = async (req: Request, res: Response): Promise<void> => {
+export const deleteOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const deletedOrder = await Order.findByIdAndDelete(id);
     
     if (!deletedOrder) {
-      res.status(404).json({ message: 'Order not found' });
-      return;
+      return res.status(404).json({ message: "Order not found" });
     }
     
-    res.status(200).json({ message: 'Order deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to delete order', error });
+    res.status(200).json({ message: "Order deleted successfully" });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
   }
 };

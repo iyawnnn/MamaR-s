@@ -31,16 +31,26 @@ export interface IInventoryItem {
   updatedAt?: string;
 }
 
-export interface ISale {
-  _id: string;
-  productId: string;
-  productName: string;
-  customerName: string;
+export interface IOrderItem {
+  _id?: string;
+  product: any;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  discount: number;
-  date: string;
+  priceAtTimeOfOrder: number;
+}
+
+export interface IOrder {
+  _id: string;
+  customerName: string;
+  customerContact?: string;
+  items: IOrderItem[];
+  status: string;
+  paymentStatus: string;
+  totalAmount: number;
+  amountPaid: number;
+  targetDate: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IStockLog {

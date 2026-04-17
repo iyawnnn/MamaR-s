@@ -45,7 +45,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
           className="h-10 w-10 object-contain drop-shadow-sm" 
           style={{ minWidth: '40px' }}
         />
-        <h1 className="font-sans mt-1 text-xl font-black uppercase leading-none tracking-tighter text-primary">
+        <h1 className="font-serif mt-1 text-2xl font-black uppercase leading-none tracking-tighter text-primary">
           Mama R's
         </h1>
       </div>

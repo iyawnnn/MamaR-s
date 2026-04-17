@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../services/api";
+import api, { fetchOrders } from "../services/api";
 import {
   TrendingUp,
   PieChart,
@@ -34,33 +34,33 @@ export default function ReportsPage() {
   const fetchReport = async () => {
     setLoading(true);
     try {
-      const [salesRes, prodRes, expRes] = await Promise.all([
-        api.get("/sales"),
+      const [allOrders, prodRes, expRes] = await Promise.all([
+        fetchOrders('FULFILLED'),
         api.get("/products"),
         api.get("/expenses"),
       ]);
 
-      const sales = salesRes.data.sales || salesRes.data || [];
+      const orders = allOrders || [];
       const products = prodRes.data.products || prodRes.data || [];
       const expenses = expRes.data || [];
 
       const now = new Date();
 
       // Abstracted time filter for reusability across datasets
-      const filterByTimeFrame = (dateString) => {
+      const filterByTimeFrame = (dateString: string | Date) => {
         const itemDate = new Date(dateString);
-        if (timeFrame === "24h") return now - itemDate < 24 * 60 * 60 * 1000;
-        if (timeFrame === "7d") return now - itemDate < 7 * 24 * 60 * 60 * 1000;
+        if (timeFrame === "24h") return now.getTime() - itemDate.getTime() < 24 * 60 * 60 * 1000;
+        if (timeFrame === "7d") return now.getTime() - itemDate.getTime() < 7 * 24 * 60 * 60 * 1000;
         return true;
       };
 
-      const filteredSales = sales.filter((s) => filterByTimeFrame(s.date));
+      const filteredOrders = orders.filter((o) => filterByTimeFrame(o.targetDate || o.createdAt || new Date()));
       const filteredExpenses = expenses.filter((e) =>
         filterByTimeFrame(e.date),
       );
 
-      const revenue = filteredSales.reduce(
-        (acc, curr) => acc + (curr.totalPrice || 0),
+      const revenue = filteredOrders.reduce(
+        (acc, curr) => acc + (curr.totalAmount || 0),
         0,
       );
       const totalExp = filteredExpenses.reduce(
@@ -68,13 +68,15 @@ export default function ReportsPage() {
         0,
       );
 
-      const productMap = {};
-      filteredSales.forEach((s) => {
-        const name = s.productName;
-        if (!productMap[name])
-          productMap[name] = { productName: name, quantity: 0, totalPrice: 0 };
-        productMap[name].quantity += s.quantity;
-        productMap[name].totalPrice += s.totalPrice;
+      const productMap: Record<string, any> = {};
+      filteredOrders.forEach((o) => {
+        o.items.forEach((item: any) => {
+          const name = item.product?.name || "Unknown Item";
+          if (!productMap[name])
+            productMap[name] = { productName: name, quantity: 0, totalPrice: 0 };
+          productMap[name].quantity += item.quantity || 0;
+          productMap[name].totalPrice += (item.quantity || 0) * (item.priceAtTimeOfOrder || 0);
+        });
       });
 
       const sortedProducts = Object.values(productMap)
@@ -85,12 +87,12 @@ export default function ReportsPage() {
         totalRevenue: revenue,
         totalExpenses: totalExp,
         netProfit: revenue - totalExp,
-        totalSales: filteredSales.length,
-        lowStockCount: products.filter((p) => p.lowStock).length,
+        totalSales: filteredOrders.length,
+        lowStockCount: products.filter((p: any) => p.lowStock).length,
         avgSaleValue:
-          filteredSales.length > 0 ? revenue / filteredSales.length : 0,
-        topProducts: sortedProducts,
-        rawSales: filteredSales,
+          filteredOrders.length > 0 ? revenue / filteredOrders.length : 0,
+        topProducts: sortedProducts as never[],
+        rawSales: filteredOrders as never[],
       });
     } catch (err) {
       console.error("Report Error:", err);
@@ -106,12 +108,12 @@ export default function ReportsPage() {
   const exportToCSV = () => {
     if (reportData.rawSales.length === 0) return alert("No data available");
     const headers = ["Date", "Customer", "Product", "Qty", "Total"];
-    const rows = reportData.rawSales.map((s) => [
-      new Date(s.date).toLocaleDateString(),
+    const rows = reportData.rawSales.map((s: any) => [
+      new Date(s.targetDate || s.createdAt || new Date()).toLocaleDateString(),
       s.customerName,
-      s.productName,
-      s.quantity,
-      s.totalPrice,
+      s.items.map((i: any) => i.product?.name || 'Item').join(' & '),
+      s.items.reduce((acc: number, curr: any) => acc + (curr.quantity || 0), 0),
+      s.totalAmount,
     ]);
     const csvContent =
       "data:text/csv;charset=utf-8," +

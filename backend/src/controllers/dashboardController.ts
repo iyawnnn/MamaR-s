@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Sale from '../models/Sale.js';
+import Order from '../models/Order.js';
 import Product from '../models/InventoryItem.js';
 
 const getDayRange = (date = new Date()) => {
@@ -14,15 +14,15 @@ export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const { start, end } = getDayRange();
 
-    const dailySales = await Sale.aggregate([
-      { $match: { date: { $gte: start, $lte: end } } },
-      { $group: { _id: null, total: { $sum: "$totalPrice" }, count: { $sum: 1 } } }
+    const dailySales = await Order.aggregate([
+      { $match: { status: 'FULFILLED', createdAt: { $gte: start, $lte: end } } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" }, count: { $sum: 1 } } }
     ]);
 
     const firstDayMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const monthlySales = await Sale.aggregate([
-      { $match: { date: { $gte: firstDayMonth } } },
-      { $group: { _id: null, total: { $sum: "$totalPrice" } } }
+    const monthlySales = await Order.aggregate([
+      { $match: { status: 'FULFILLED', createdAt: { $gte: firstDayMonth } } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
     const allProducts = await Product.find({ archived: false });
@@ -58,12 +58,12 @@ export const getSalesChart = async (req: Request, res: Response) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const sales = await Sale.aggregate([
-      { $match: { date: { $gte: thirtyDaysAgo } } },
+    const sales = await Order.aggregate([
+      { $match: { status: 'FULFILLED', createdAt: { $gte: thirtyDaysAgo } } },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-          total: { $sum: "$totalPrice" }
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          total: { $sum: "$totalAmount" }
         }
       },
       { $sort: { _id: 1 } }
