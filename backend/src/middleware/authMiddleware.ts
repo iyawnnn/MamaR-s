@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
-export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+export const protect = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   if (!authHeader) return res.status(401).json({ message: 'No token provided' });
 
@@ -10,6 +10,7 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    // @ts-ignore - attaching user to request
     req.user = decoded;
     next();
   } catch (err) {

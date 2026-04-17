@@ -1,5 +1,5 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
-import { IExpense } from '../types';
+import { IExpense, IOrder } from '../types';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/api', 
@@ -22,6 +22,13 @@ export const setToken = (token: string | null): void => {
   }
 };
 
+export const fetchOrders = async (status?: string): Promise<IOrder[]> => {
+  // If status is 'all', we pass no query params to get everything
+  const params = status && status !== 'all' ? { status: status.toUpperCase() } : {};
+  const response = await api.get<IOrder[]>('/orders', { params });
+  return response.data;
+};
+
 export const fetchExpenses = async (): Promise<IExpense[]> => {
   const response = await api.get<IExpense[]>('/expenses');
   return response.data;
@@ -29,6 +36,19 @@ export const fetchExpenses = async (): Promise<IExpense[]> => {
 
 export const createExpense = async (data: Partial<IExpense>): Promise<IExpense> => {
   const response = await api.post<IExpense>('/expenses', data);
+  return response.data;
+};
+
+export const updateOrderStatus = async (
+  id: string, 
+  updates: { status?: string; paymentStatus?: string; amountPaid?: number }
+): Promise<IOrder> => {
+  const response = await api.patch<IOrder>(`/orders/${id}/status`, updates);
+  return response.data;
+};
+
+export const createOrder = async (data: Partial<IOrder>): Promise<IOrder> => {
+  const response = await api.post<IOrder>('/orders', data);
   return response.data;
 };
 

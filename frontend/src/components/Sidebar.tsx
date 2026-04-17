@@ -1,143 +1,112 @@
-import React, { useContext, useEffect } from "react";
+import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { AuthContext } from "../contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 import {
-  LayoutDashboard,
-  Croissant,
-  ShoppingBag,
-  History,
-  BarChart3,
+  Layout,
+  Package,
+  DollarSign,
+  CreditCard,
+  Clock,
+  FileText,
   LogOut,
-  UserCircle,
-  X,
-  Wheat,
-  Receipt,
+  Settings,
+  ClipboardList
 } from "lucide-react";
+import logoUrl from "@/assets/logo/mama-rs-logo.png";
 
-const Sidebar = ({ isOpen, onClose }) => {
-  const { logout, user } = useContext(AuthContext);
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar = ({ onClose }: SidebarProps) => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
-
   const handleLogout = () => {
-    logout();
+    // Assuming you handle your logout logic here
     navigate("/login");
   };
 
   const menuItems = [
-    { name: "Dashboard", icon: LayoutDashboard, path: "/" },
-    { name: "Inventory", icon: Croissant, path: "/products" },
-    { name: "Sales (POS)", icon: ShoppingBag, path: "/sales" },
-    { name: "Expenses", icon: Receipt, path: "/expenses" },
-    { name: "Stock Logs", icon: History, path: "/stock-history" },
-    { name: "Reports", icon: BarChart3, path: "/reports" },
+    { name: "Dashboard", icon: Layout, path: "/" },
+    { name: "Orders", icon: ClipboardList, path: "/orders" },
+    { name: "Inventory", icon: Package, path: "/products" },
+    { name: "Sales (POS)", icon: DollarSign, path: "/sales" },
+    { name: "Expenses", icon: CreditCard, path: "/expenses" },
+    { name: "Stock Logs", icon: Clock, path: "/stock-history" },
+    { name: "Reports", icon: FileText, path: "/reports" },
   ];
 
   return (
-    <>
-      {/* Mobile Overlay */}
-      <div
-        className={`fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={onClose}
-      />
+    <aside className="flex h-full w-full flex-col bg-background text-foreground transition-all duration-300">
+      
+      {/* Brand Header */}
+      <div className="flex h-24 shrink-0 items-center gap-3 px-8">
+        <img 
+          src={logoUrl} 
+          alt="Mama R's Logo" 
+          className="h-10 w-10 object-contain drop-shadow-sm" 
+          style={{ minWidth: '40px' }}
+        />
+        <h1 className="font-serif mt-1 text-2xl font-black uppercase leading-none tracking-tighter text-primary">
+          Mama R's
+        </h1>
+      </div>
 
-      <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-64 bg-stone-950 text-stone-400 shadow-2xl transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col border-r border-stone-800/50 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        {/* Header - Balanced Scaling */}
-        <div className="h-20 flex items-center px-6 border-b border-stone-900 bg-stone-950 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Wheat className="text-stone-950 w-6 h-6" />
-            </div>
-            <h1 className="text-xl font-black text-white tracking-tighter font-display uppercase leading-none mt-1">
-              Mama R's
-            </h1>
-          </div>
+      {/* Primary Navigation */}
+      <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
+        <p className="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+          Core Management
+        </p>
 
-          <button
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
             onClick={onClose}
-            className="lg:hidden ml-auto text-stone-500 hover:text-white transition-colors cursor-pointer"
+            className={({ isActive }) =>
+              `group flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-200 ${
+                isActive
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`
+            }
           >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+            {({ isActive }) => (
+              <>
+                <item.icon
+                  className={`h-5 w-5 transition-colors ${
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground/70 group-hover:text-foreground"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span className="tracking-tight">{item.name}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
 
-        {/* Navigation - Increased Font & Icon Size */}
-        <nav className="flex-1 px-3 py-8 space-y-1.5 overflow-y-auto">
-          <p className="px-4 text-[10px] font-black text-stone-700 uppercase tracking-[0.2em] mb-4">
-            Core Management
-          </p>
-
-          {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => window.innerWidth < 1024 && onClose && onClose()}
-              className={({ isActive }) =>
-                `group flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${
-                  isActive
-                    ? "bg-stone-900 text-white border border-stone-800 shadow-sm"
-                    : "hover:bg-stone-900/50 hover:text-stone-200"
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon
-                    className={`w-[18px] h-[18px] transition-colors ${
-                      isActive
-                        ? "text-amber-500"
-                        : "text-stone-700 group-hover:text-stone-400"
-                    }`}
-                  />
-                  <span className="tracking-tight">{item.name}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Footer Profile Section */}
-        <div className="p-5 border-t border-stone-900 bg-stone-950 shrink-0">
-          <div className="flex items-center gap-3 mb-6 px-1">
-            <div className="w-10 h-10 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-500">
-              <UserCircle className="w-6 h-6" />
-            </div>
-            <div className="overflow-hidden text-left leading-tight">
-              <p className="text-sm font-black text-white truncate uppercase tracking-tight">
-                {user?.name || "Admin"}
-              </p>
-              <p className="text-[10px] text-stone-600 font-bold tracking-widest uppercase mt-1">
-                Portal Access
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-stone-900 border border-stone-800 text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-red-400 hover:border-red-900/20 transition-all cursor-pointer active:scale-95"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
-      </aside>
-    </>
+      {/* Flat Utilities Bottom */}
+      <div className="shrink-0 p-6 space-y-2">
+        <Button
+          variant="ghost"
+          className="w-full justify-start rounded-2xl px-4 py-3.5 text-sm font-bold text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+        >
+          <Settings className="mr-4 h-5 w-5" aria-hidden="true" />
+          Settings
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start rounded-2xl px-4 py-3.5 text-sm font-bold text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
+        >
+          <LogOut className="mr-4 h-5 w-5" aria-hidden="true" />
+          Sign Out
+        </Button>
+      </div>
+    </aside>
   );
 };
 

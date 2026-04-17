@@ -6,12 +6,12 @@ import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 
 import productRoutes from './routes/productRoutes.js';
-import salesRoutes from './routes/salesRoutes.js';
 import stockLogRoutes from './routes/stockLogRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 
 const app = express();
 
@@ -47,7 +47,7 @@ app.get('/api/health', (req: express.Request, res: express.Response) => res.json
 app.get('/api/ping', (req: express.Request, res: express.Response) => res.json({ message: 'Backend awake' }));
 
 app.use('/api/products', productRoutes);
-app.use('/api/sales', salesRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api/stock-logs', stockLogRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);

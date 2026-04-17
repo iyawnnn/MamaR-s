@@ -33,23 +33,49 @@ export interface IInventoryItem {
   updatedAt?: Date;
 }
 
-export interface ISale {
-  _id: Types.ObjectId;
-  productId: Types.ObjectId;
-  productName: string;
-  customerName: string;
+// Order System Enums
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  PREPARING = 'PREPARING',
+  READY = 'READY',
+  FULFILLED = 'FULFILLED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PARTIAL = 'PARTIAL',
+  PAID = 'PAID'
+}
+
+export interface IOrderItem {
+  product: Types.ObjectId; // Refers to IInventoryItem
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  discount: number;
-  date: Date;
+  priceAtTimeOfOrder: number;
+}
+
+// Replaces ISale
+export interface IOrder {
+  _id: Types.ObjectId;
+  customerName: string;
+  customerContact?: string;
+  items: IOrderItem[];
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  totalAmount: number;
+  amountPaid: number;
+  targetDate: Date;
+  notes?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IStockLog {
   _id: Types.ObjectId;
   productId: Types.ObjectId;
   productName: string;
-  changeType: 'Restock' | 'Sale' | 'Adjustment';
+  // Updated to reflect the pre-order model rather than direct sales
+  changeType: 'Restock' | 'Fulfillment' | 'Adjustment' | 'Cancelled Order';
   previousStock: number;
   changeAmount: number;
   newStock: number;

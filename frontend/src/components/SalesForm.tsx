@@ -53,15 +53,19 @@ export default function SalesForm({ onSaleRecorded }) {
     setSubmitting(true);
     try {
       const payload = {
-        productId: selectedProduct._id,
-        quantity: Number(quantity),
         customerName: customerName || 'Walk-in',
-        variantName: selectedVariant || undefined,
-        customPrice: Number(price),
-        date: saleDate
+        targetDate: saleDate,
+        status: 'FULFILLED',
+        paymentStatus: 'PAID',
+        items: [{
+          product: selectedProduct._id,
+          quantity: Number(quantity),
+          priceAtTimeOfOrder: Number(price),
+          variant: selectedVariant || undefined
+        }]
       };
 
-      await api.post('/sales', payload);
+      await api.post('/orders', payload);
       
       setQuantity(1);
       setCustomerName('');

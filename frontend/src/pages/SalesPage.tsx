@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import api from "../services/api";
+import api, { fetchOrders } from "../services/api";
+import { IOrder } from "../types";
 import SalesForm from "../components/SalesForm";
 import { Loader2, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -8,36 +9,40 @@ const Peso = () => (
 );
 
 export default function SalesPage() {
-  const [sales, setSales] = useState([]);
+  const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const totalRevenue = sales.reduce(
-    (acc, curr) => acc + (curr.totalPrice || 0),
+  const totalRevenue = orders.reduce(
+    (acc, curr) => acc + (curr.totalAmount || 0),
     0
   );
-  const totalSold = sales.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
+  
+  const totalSold = orders.reduce((acc, curr) => {
+    let orderQty = 0;
+    curr.items.forEach(i => orderQty += (i.quantity || 0));
+    return acc + orderQty;
+  }, 0);
 
-  const fetchSales = async () => {
+  const fetchSalesData = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/sales");
-      const salesData = res.data.sales || res.data || [];
-      setSales(salesData);
+      const ordersData = await fetchOrders('FULFILLED');
+      setOrders(ordersData);
     } catch (err) {
-      console.error("Failed to fetch sales", err);
+      console.error("Failed to fetch orders", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSales();
+    fetchSalesData();
   }, []);
 
-  const totalPages = Math.ceil(sales.length / itemsPerPage);
-  const currentPageData = sales.slice(
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const currentPageData = orders.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -78,7 +83,7 @@ export default function SalesPage() {
 
       <SalesForm
         onSaleRecorded={() => {
-          fetchSales();
+          fetchSalesData();
           setCurrentPage(1);
         }}
       />
@@ -90,7 +95,7 @@ export default function SalesPage() {
             Recent Transactions
           </h3>
           <span className="text-[10px] font-black bg-stone-200 text-stone-600 px-3 py-1 rounded-lg uppercase">
-            {sales.length} Records
+            {orders.length} Records
           </span>
         </div>
 
@@ -98,7 +103,7 @@ export default function SalesPage() {
           <div className="p-20 flex justify-center text-amber-500">
             <Loader2 className="animate-spin w-8 h-8" />
           </div>
-        ) : sales.length === 0 ? (
+        ) : orders.length === 0 ? (
           <div className="p-16 text-center text-stone-400 flex flex-col items-center">
             <ShoppingBag className="w-12 h-12 text-stone-100 mb-4" />
             <p className="font-bold text-sm uppercase tracking-widest italic">
@@ -119,31 +124,31 @@ export default function SalesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-50">
-                  {currentPageData.map((s) => (
+                  {currentPageData.map((order) => (
                     <tr
-                      key={s._id}
+                      key={order._id}
                       className="hover:bg-stone-50/50 transition-colors"
                     >
                       <td className="px-6 py-5 text-[10px] text-stone-400 font-black whitespace-nowrap uppercase">
-                        {new Date(s.date).toLocaleDateString(undefined, {
+                        {new Date((order as any).targetDate || (order as any).createdAt || new Date()).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
                         })}
                       </td>
                       <td className="px-6 py-5 font-bold text-stone-800 text-sm">
-                        {s.customerName || "Walk-in"}
+                        {order.customerName || "Walk-in"}
                       </td>
                       <td className="px-6 py-5 text-[11px] text-stone-500 italic">
-                        {s.productName || "Bakery Item"}
+                        {order.items.map((i: any) => i.product?.name || 'Item').join(', ')}
                       </td>
                       <td className="px-6 py-5 text-center">
                         <span className="bg-stone-100 text-stone-600 px-2.5 py-1 rounded-md font-black text-[10px]">
-                          x{s.quantity}
+                          x{order.items.reduce((acc: number, curr: any) => acc + (curr.quantity || 0), 0)}
                         </span>
                       </td>
                       <td className="px-6 py-5 text-right font-black text-emerald-600 text-sm whitespace-nowrap">
                         <Peso />
-                        {Number(s.totalPrice).toLocaleString()}
+                        {Number(order.totalAmount).toLocaleString()}
                       </td>
                     </tr>
                   ))}
@@ -154,7 +159,7 @@ export default function SalesPage() {
             <div className="p-5 border-t border-stone-100 bg-stone-50/30 flex items-center justify-between">
               <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest hidden sm:block">
                 Entry {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, sales.length)}
+                {Math.min(currentPage * itemsPerPage, orders.length)}
               </p>
 
               <div className="flex items-center gap-1 mx-auto sm:mx-0">

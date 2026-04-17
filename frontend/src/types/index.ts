@@ -31,16 +31,26 @@ export interface IInventoryItem {
   updatedAt?: string;
 }
 
-export interface ISale {
-  _id: string;
-  productId: string;
-  productName: string;
-  customerName: string;
+export interface IOrderItem {
+  _id?: string;
+  product: any;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  discount: number;
-  date: string;
+  priceAtTimeOfOrder: number;
+}
+
+export interface IOrder {
+  _id: string;
+  customerName: string;
+  customerContact?: string;
+  items: IOrderItem[];
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  totalAmount: number;
+  amountPaid: number;
+  targetDate: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IStockLog {
@@ -62,4 +72,18 @@ export interface IUser {
   role: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  PREPARING = 'PREPARING',
+  READY = 'READY',
+  FULFILLED = 'FULFILLED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PARTIAL = 'PARTIAL',
+  PAID = 'PAID'
 }
