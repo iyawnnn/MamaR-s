@@ -1,53 +1,111 @@
-import React, { useState } from "react";
-import Sidebar from "./Sidebar";
-import { Menu } from "lucide-react";
+import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  Layout,
+  Package,
+  DollarSign,
+  CreditCard,
+  Clock,
+  FileText,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import logoUrl from "@/assets/logo/mama-rs-logo.png";
 
-export default function DefaultLayout({ children }: React.PropsWithChildren<unknown>) {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar = ({ onClose }: SidebarProps) => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Assuming you handle your logout logic here
+    navigate("/login");
+  };
+
+  const menuItems = [
+    { name: "Dashboard", icon: Layout, path: "/" },
+    { name: "Inventory", icon: Package, path: "/products" },
+    { name: "Sales (POS)", icon: DollarSign, path: "/sales" },
+    { name: "Expenses", icon: CreditCard, path: "/expenses" },
+    { name: "Stock Logs", icon: Clock, path: "/stock-history" },
+    { name: "Reports", icon: FileText, path: "/reports" },
+  ];
 
   return (
-    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
+    <aside className="flex h-full w-full flex-col bg-background text-foreground transition-all duration-300">
       
-      {/* Desktop Navigation - Full Width Sidebar */}
-      <div className="hidden lg:flex w-64 shrink-0 border-r border-border/40 bg-background z-20">
-        <Sidebar />
+      {/* Brand Header */}
+      <div className="flex h-24 shrink-0 items-center gap-3 px-8">
+        <img 
+          src={logoUrl} 
+          alt="Mama R's Logo" 
+          className="h-10 w-10 object-contain drop-shadow-sm" 
+          style={{ minWidth: '40px' }}
+        />
+        <h1 className="font-sans mt-1 text-xl font-black uppercase leading-none tracking-tighter text-primary">
+          Mama R's
+        </h1>
       </div>
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background relative z-10">
-        
-        {/* Mobile Header (Hidden on Desktop) */}
-        <header className="lg:hidden flex items-center justify-between p-4 shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-md z-30">
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Mama R's Logo" className="h-8 w-8 object-contain" />
-            <span className="font-display text-lg font-black uppercase tracking-tighter text-foreground">
-              Mama R's
-            </span>
-          </div>
-          
-          <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-foreground hover:bg-muted/50 rounded-xl h-10 w-10">
-                <Menu className="h-5 w-5" aria-hidden="true" />
-                <span className="sr-only">Toggle mobile menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-72 border-none bg-background shadow-2xl">
-              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-              <Sidebar onClose={() => setIsMobileOpen(false)} />
-            </SheetContent>
-          </Sheet>
-        </header>
+      {/* Primary Navigation */}
+      <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
+        <p className="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+          Core Management
+        </p>
 
-        {/* Main Content Render Area */}
-        <div className="flex-1 overflow-y-auto px-4 pb-8 pt-6 md:px-10 md:pb-12 md:pt-10 scroll-smooth">
-          <div className="mx-auto w-full max-w-[1600px]">
-            {children}
-          </div>
-        </div>
-      </main>
-    </div>
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            onClick={onClose}
+            className={({ isActive }) =>
+              `group flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-200 ${
+                isActive
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <item.icon
+                  className={`h-5 w-5 transition-colors ${
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground/70 group-hover:text-foreground"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span className="tracking-tight">{item.name}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Flat Utilities Bottom */}
+      <div className="shrink-0 p-6 space-y-2">
+        <Button
+          variant="ghost"
+          className="w-full justify-start rounded-2xl px-4 py-3.5 text-sm font-bold text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+        >
+          <Settings className="mr-4 h-5 w-5" aria-hidden="true" />
+          Settings
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start rounded-2xl px-4 py-3.5 text-sm font-bold text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
+        >
+          <LogOut className="mr-4 h-5 w-5" aria-hidden="true" />
+          Sign Out
+        </Button>
+      </div>
+    </aside>
   );
-}
+};
+
+export default Sidebar;
