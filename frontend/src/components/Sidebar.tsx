@@ -3,14 +3,14 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Layout,
-  Package,
-  DollarSign,
   CreditCard,
   Clock,
   FileText,
   LogOut,
   Settings,
-  ClipboardList
+  ClipboardList,
+  BookOpen,
+  Boxes,
 } from "lucide-react";
 import logoUrl from "@/assets/logo/mama-rs-logo.png";
 
@@ -28,9 +28,9 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
   const menuItems = [
     { name: "Dashboard", icon: Layout, path: "/" },
-    { name: "Orders", icon: ClipboardList, path: "/orders" },
-    { name: "Inventory", icon: Package, path: "/products" },
-    { name: "Sales (POS)", icon: DollarSign, path: "/sales" },
+    { name: "Active Orders", icon: ClipboardList, path: "/orders" },
+    { name: "Product Catalog", icon: BookOpen, path: "/catalog" },
+    { name: "Stock Levels", icon: Boxes, path: "/inventory" },
     { name: "Expenses", icon: CreditCard, path: "/expenses" },
     { name: "Stock Logs", icon: Clock, path: "/stock-history" },
     { name: "Reports", icon: FileText, path: "/reports" },
@@ -38,14 +38,13 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
   return (
     <aside className="flex h-full w-full flex-col bg-background text-foreground transition-all duration-300">
-      
       {/* Brand Header */}
       <div className="flex h-24 shrink-0 items-center gap-3 px-8">
-        <img 
-          src={logoUrl} 
-          alt="Mama R's Logo" 
-          className="h-10 w-10 object-contain drop-shadow-sm" 
-          style={{ minWidth: '40px' }}
+        <img
+          src={logoUrl}
+          alt="Mama R's Logo"
+          className="h-10 w-10 object-contain drop-shadow-sm"
+          style={{ minWidth: "40px" }}
         />
         <h1 className="font-serif mt-1 text-2xl font-black uppercase leading-none tracking-tighter text-primary">
           Mama R's

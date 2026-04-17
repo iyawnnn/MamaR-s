@@ -1,20 +1,37 @@
 import { Request, Response } from 'express';
-import Sale from '../models/Sale.js';
+import Order from '../models/Order.js';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const dailySales = await Sale.aggregate([
-      { $match: { date: { $gte: today } } },
-      { $group: { _id: null, total: { $sum: "$totalPrice" } } }
+    // Filter for FULFILLED orders that have a targetDate (or createdAt) today
+    const dailySales = await Order.aggregate([
+      { 
+        $match: { 
+          status: 'FULFILLED',
+          $or: [
+            { targetDate: { $gte: today } },
+            { createdAt: { $gte: today } }
+          ]
+        } 
+      },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const monthlySales = await Sale.aggregate([
-      { $match: { date: { $gte: startOfMonth } } },
-      { $group: { _id: null, total: { $sum: "$totalPrice" } } }
+    const monthlySales = await Order.aggregate([
+      { 
+        $match: { 
+          status: 'FULFILLED',
+          $or: [
+            { targetDate: { $gte: startOfMonth } },
+            { createdAt: { $gte: startOfMonth } }
+          ]
+        } 
+      },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
     res.json({
@@ -32,12 +49,17 @@ export const getSalesOverTime = async (req: Request, res: Response) => {
     const startDate = start ? new Date(start as string) : new Date(new Date().setDate(new Date().getDate() - 30));
     const endDate = end ? new Date(end as string) : new Date();
 
-    const sales = await Sale.aggregate([
-      { $match: { date: { $gte: startDate, $lte: endDate } } },
+    const sales = await Order.aggregate([
+      { 
+        $match: { 
+          status: 'FULFILLED',
+          targetDate: { $gte: startDate, $lte: endDate } 
+        } 
+      },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-          total: { $sum: "$totalPrice" }
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$targetDate" } },
+          total: { $sum: "$totalAmount" }
         }
       },
       { $sort: { _id: 1 } }

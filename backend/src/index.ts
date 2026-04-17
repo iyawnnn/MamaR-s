@@ -29,8 +29,9 @@ app.use(helmet({
 }));
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  // Allow 5000 requests in development, but lock it down to 100 in production
+  max: process.env.NODE_ENV === 'production' ? 100 : 5000, 
   message: 'Too many requests, try again later.'
 });
 app.use('/api', limiter);

@@ -4,18 +4,18 @@ import { Loader2 } from "lucide-react";
 import { AuthContext } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Components & Layout
 import DefaultLayout from "./components/DefaultLayout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
-import ProductsPage from "./pages/ProductsPage";
-import SalesPage from "./pages/SalesPage";
+import OrdersPage from "./pages/OrdersPage";
 import StockHistoryPage from "./pages/StockHistoryPage";
 import ReportsPage from "./pages/ReportsPage";
 import ExpensePage from "./pages/ExpensePage";
-import OrdersPage from "./pages/OrdersPage";
 
-// Minimalist loading screen matching the new high-contrast theme
+// We will build these two next to replace ProductsPage
+import CatalogPage from "./pages/CatalogPage"; 
+import InventoryPage from "./pages/InventoryPage";
+
 const LoadingScreen = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-background text-primary gap-4">
     <Loader2 className="w-10 h-10 animate-spin" />
@@ -30,7 +30,6 @@ function App() {
 
   if (loading) return <LoadingScreen />;
 
-  // Enforce authentication routing
   if (!user) {
     return (
       <Routes>
@@ -40,16 +39,17 @@ function App() {
     );
   }
 
-  // The DefaultLayout now handles the Sidebar, Mobile Header, and responsive padding globally.
-  // All pages rendered inside these routes will automatically fit into the main content area.
   return (
     <DefaultLayout>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/sales" element={<SalesPage />} />
-        <Route path="/stock-history" element={<StockHistoryPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        
+        {/* Separated Product & Inventory Routes */}
+        <Route path="/catalog" element={<CatalogPage />} />
+        <Route path="/inventory" element={<InventoryPage />} />
+        
+        <Route path="/stock-history" element={<StockHistoryPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route
           path="/expenses"

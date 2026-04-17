@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchOrders, updateOrderStatus } from "@/services/api";
 import { IOrder } from "@/types";
 import {
@@ -16,34 +16,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { columns } from "./orders/columns";
+import OrderEntrySheet from "@/components/OrderEntrySheet";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchOrders(activeTab);
+      setOrders(data);
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
-    const loadOrders = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchOrders(activeTab);
-        setOrders(data);
-      } catch (error) {
-        console.error("Failed to fetch orders:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadOrders();
-  }, [activeTab]);
+  }, [loadOrders]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus(orderId, { status: newStatus });
-      
-      const updatedData = await fetchOrders(activeTab);
-      setOrders(updatedData);
+      await loadOrders();
     } catch (error) {
       console.error("Status update failed", error);
     }
@@ -60,10 +62,16 @@ export default function OrdersPage() {
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-4xl tracking-tight" style={{ fontFamily: '"Instrument Serif", serif' }}>
+      <div className="flex items-center justify-between space-y-2 pb-2 border-b border-border/40">
+        <h2 className="text-4xl tracking-tight font-black text-foreground" style={{ fontFamily: '"Instrument Serif", serif' }}>
           Active Orders
         </h2>
+        <Button 
+          onClick={() => setIsSheetOpen(true)}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-xl uppercase tracking-widest text-[10px] gap-2 px-6 shadow-lg shadow-primary/20"
+        >
+          <Plus className="w-4 h-4" /> New Order
+        </Button>
       </div>
 
       <Tabs defaultValue="all" className="space-y-4" onValueChange={setActiveTab}>
@@ -140,6 +148,15 @@ export default function OrdersPage() {
           </Table>
         </div>
       </Tabs>
+
+      <OrderEntrySheet 
+        open={isSheetOpen} 
+        onOpenChange={setIsSheetOpen} 
+        onSuccess={() => {
+          setActiveTab("all");
+          loadOrders();
+        }} 
+      />
     </div>
   );
 }
