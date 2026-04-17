@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { AuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Layout,
-  CreditCard,
   Clock,
   FileText,
   LogOut,
@@ -11,6 +11,7 @@ import {
   ClipboardList,
   BookOpen,
   Boxes,
+  CheckSquare
 } from "lucide-react";
 import logoUrl from "@/assets/logo/mama-rs-logo.png";
 
@@ -20,25 +21,30 @@ interface SidebarProps {
 
 const Sidebar = ({ onClose }: SidebarProps) => {
   const navigate = useNavigate();
+  
+  // 1. Extract the logout function from your context
+  const { logout } = useContext(AuthContext);
 
   const handleLogout = () => {
-    // Assuming you handle your logout logic here
+    // 2. Clear the token and state before routing
+    if (logout) {
+      logout();
+    }
     navigate("/login");
   };
 
   const menuItems = [
-    { name: "Dashboard", icon: Layout, path: "/" },
+    { name: "Dashboard", icon: Layout, path: "/dashboard" }, // Updated path
     { name: "Active Orders", icon: ClipboardList, path: "/orders" },
     { name: "Product Catalog", icon: BookOpen, path: "/catalog" },
     { name: "Stock Levels", icon: Boxes, path: "/inventory" },
-    { name: "Expenses", icon: CreditCard, path: "/expenses" },
     { name: "Stock Logs", icon: Clock, path: "/stock-history" },
-    { name: "Reports", icon: FileText, path: "/reports" },
+    { name: "Accounting Hub", icon: FileText, path: "/reports" },
+    { name: "End of Day", icon: CheckSquare, path: "/reconciliation" },
   ];
 
   return (
     <aside className="flex h-full w-full flex-col bg-background text-foreground transition-all duration-300">
-      {/* Brand Header */}
       <div className="flex h-24 shrink-0 items-center gap-3 px-8">
         <img
           src={logoUrl}
@@ -51,7 +57,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
         </h1>
       </div>
 
-      {/* Primary Navigation */}
       <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
         <p className="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
           Core Management
@@ -87,7 +92,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
         ))}
       </nav>
 
-      {/* Flat Utilities Bottom */}
       <div className="shrink-0 p-6 space-y-2">
         <Button
           variant="ghost"
