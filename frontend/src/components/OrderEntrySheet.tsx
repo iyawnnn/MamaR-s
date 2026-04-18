@@ -1,22 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Minus, Plus, ShoppingBag, Loader2, CalendarIcon, ChevronDown, Trash2 } from "lucide-react";
+import { 
+  Minus, 
+  Plus, 
+  ShoppingBag, 
+  Loader2, 
+  CalendarIcon, 
+  Trash2, 
+  User, 
+  PackageSearch,
+  ShoppingCart,
+  ChevronDown
+} from "lucide-react";
 import api from "@/services/api";
 import { formatPHP } from "@/utils/currency";
 import { cn } from "@/lib/utils";
@@ -27,9 +45,8 @@ interface OrderEntrySheetProps {
   onSuccess: () => void;
 }
 
-// Represents an item added to the active order
 type CartItem = {
-  id: string; // Unique ID for the cart row
+  id: string;
   product: any;
   variant: any | null;
   quantity: number;
@@ -73,18 +90,26 @@ export default function OrderEntrySheet({ open, onOpenChange, onSuccess }: Order
     setCart([]);
   };
 
-  // Add a base product to the cart
-  const addToCart = (product: any) => {
-    const defaultVariant = product.hasVariants && product.variants?.length > 0 ? product.variants[0] : null;
-    setCart([
-      ...cart,
-      {
-        id: Math.random().toString(36).substr(2, 9),
-        product,
-        variant: defaultVariant,
-        quantity: 1,
-      },
-    ]);
+  const addToCart = (product: any, specificVariant: any = null) => {
+    const variantToAdd = specificVariant || (product.hasVariants && product.variants?.length > 0 ? product.variants[0] : null);
+
+    const existingItemIndex = cart.findIndex(
+      item => item.product._id === product._id && item.variant?.name === variantToAdd?.name
+    );
+
+    if (existingItemIndex >= 0) {
+      updateCartItemQuantity(cart[existingItemIndex].id, 1);
+    } else {
+      setCart([
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          product,
+          variant: variantToAdd,
+          quantity: 1,
+        },
+        ...cart,
+      ]);
+    }
   };
 
   const updateCartItemQuantity = (id: string, delta: number) => {
@@ -156,230 +181,294 @@ export default function OrderEntrySheet({ open, onOpenChange, onSuccess }: Order
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      {/* Strict solid background (bg-white) to prevent lag and bleed-through */}
-      <SheetContent className="w-full sm:max-w-[500px] p-0 flex flex-col bg-white border-l border-border/20 shadow-2xl">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl p-0 border-border/40 bg-card shadow-2xl overflow-hidden rounded-2xl gap-0 h-[85vh] max-h-[900px] flex flex-col">
         
-        {/* Header */}
-        <div className="p-8 pb-6 border-b border-border/20 shrink-0">
-          <SheetHeader>
-            <SheetTitle className="font-serif text-4xl font-black tracking-tight text-foreground">
-              New Order
-            </SheetTitle>
-            <SheetDescription className="text-xs font-semibold text-muted-foreground mt-1">
-              Configure fulfillment request and client details.
-            </SheetDescription>
-          </SheetHeader>
+        <div className="p-6 border-b border-border/40 bg-muted/10 relative overflow-hidden shrink-0">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.02] pointer-events-none">
+             <ShoppingCart className="w-40 h-40 text-foreground" />
+          </div>
+          <DialogHeader className="relative z-10">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-primary" />
+              </div>
+              <DialogTitle className="text-2xl font-serif font-black tracking-tight text-foreground">
+                Point of Sale Entry
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-xs font-medium text-muted-foreground ml-14">
+              Construct a new client order and configure product sizing variants.
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
-        {/* High-Performance Native Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar">
-          <form id="order-form" onSubmit={handleSubmit} className="space-y-10">
-            
-            {/* 1. Client Information */}
-            <div className="space-y-4">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-primary border-b border-border/20 pb-2">
-                Client Architecture
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Client Name</Label>
-                  <Input 
-                    required 
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="e.g. John Doe"
-                    className="h-11 bg-white border-border/40 rounded-lg shadow-sm font-semibold focus-visible:ring-primary"
-                  />
-                </div>
+        <div className="flex flex-col-reverse lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden">
+          
+          {/* Left Column: Form & Cart */}
+          <div className="w-full lg:w-[55%] flex flex-col border-t lg:border-t-0 lg:border-r border-border/40 bg-background min-w-0 shrink-0 lg:shrink">
+            <div className="flex-1 lg:overflow-y-auto p-6 space-y-8 no-scrollbar">
+              <form id="order-form" onSubmit={handleSubmit} className="space-y-8">
+                
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 border-b border-border/40 pb-2">
+                    <User className="w-3 h-3" /> Client Architecture
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        Client Entity
+                      </Label>
+                      <Input 
+                        required 
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="e.g. John Doe"
+                        className="h-12 bg-muted/10 border-border/40 focus-visible:ring-1 focus-visible:ring-primary rounded-xl font-bold px-4 text-sm w-full shadow-sm"
+                      />
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Contact</Label>
-                    <Input 
-                      value={customerContact}
-                      onChange={(e) => setCustomerContact(e.target.value)}
-                      placeholder="+63 900..."
-                      className="h-11 bg-white border-border/40 rounded-lg shadow-sm font-semibold focus-visible:ring-primary"
-                    />
-                  </div>
-
-                  <div className="space-y-2 flex flex-col">
-                    <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Target Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "h-11 justify-start text-left font-semibold rounded-lg border-border/40 bg-white shadow-sm hover:bg-muted/20",
-                            !targetDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-3 h-4 w-4 opacity-50" />
-                          {targetDate ? format(targetDate, "MMM d, yyyy") : <span>Select</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-white border-border/40 rounded-xl shadow-xl" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={targetDate}
-                          onSelect={setTargetDate}
-                          initialFocus
-                          className="p-3"
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2 min-w-0">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          Contact Node
+                        </Label>
+                        <Input 
+                          value={customerContact}
+                          onChange={(e) => setCustomerContact(e.target.value)}
+                          placeholder="+63 900..."
+                          className="h-12 bg-muted/10 border-border/40 focus-visible:ring-1 focus-visible:ring-primary rounded-xl font-bold px-4 text-sm w-full shadow-sm"
                         />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Active Cart */}
-            <div className="space-y-4">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-primary border-b border-border/20 pb-2">
-                Active Order ({cart.length})
-              </h3>
-              
-              <div className="space-y-3">
-                {cart.length === 0 ? (
-                  <div className="p-8 border border-dashed border-border/60 rounded-xl flex flex-col items-center justify-center text-muted-foreground bg-muted/10">
-                    <ShoppingBag className="w-8 h-8 mb-3 opacity-20" />
-                    <span className="text-sm font-medium">Select items from the catalog below.</span>
-                  </div>
-                ) : (
-                  cart.map((item) => (
-                    <div key={item.id} className="p-4 bg-white border border-border/40 rounded-xl shadow-sm flex flex-col gap-3">
-                      <div className="flex justify-between items-start">
-                        <span className="font-bold text-foreground tracking-tight">{item.product.name}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => removeCartItem(item.id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        {/* Custom Select for Variants to avoid extra package installs */}
-                        {item.product.hasVariants && item.product.variants?.length > 0 && (
-                          <div className="relative flex-1">
-                            <select
-                              value={item.variant?.name || ""}
-                              onChange={(e) => updateCartItemVariant(item.id, e.target.value)}
-                              className="w-full h-9 pl-3 pr-8 text-xs font-semibold bg-muted/20 border border-border/40 rounded-lg appearance-none outline-none focus:border-primary"
+                      <div className="space-y-2 flex flex-col min-w-0">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          Target Execution
+                        </Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "h-12 justify-start text-left font-bold rounded-xl border-border/40 bg-muted/10 hover:bg-muted/20 transition-all w-full px-4 shadow-sm truncate",
+                                !targetDate && "text-muted-foreground"
+                              )}
                             >
-                              {item.product.variants.map((v: any) => (
-                                <option key={v.name} value={v.name}>
-                                  {v.name} - {formatPHP(v.price)}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" />
-                          </div>
-                        )}
-
-                        {!item.product.hasVariants && (
-                          <span className="flex-1 text-sm font-semibold text-muted-foreground">
-                            {formatPHP(item.product.price)}
-                          </span>
-                        )}
-
-                        {/* Quantity Stepper */}
-                        <div className="flex items-center gap-1 shrink-0 bg-muted/20 border border-border/40 rounded-lg p-0.5">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => updateCartItemQuantity(item.id, -1)}
-                            className="h-7 w-7 rounded-md hover:bg-white"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <span className="w-6 text-center font-bold text-sm tabular-nums">
-                            {item.quantity}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => updateCartItemQuantity(item.id, 1)}
-                            className="h-7 w-7 rounded-md hover:bg-white text-primary"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                        </div>
+                              <CalendarIcon className="mr-3 h-4 w-4 opacity-50 shrink-0" />
+                              <span className="truncate">
+                                {targetDate ? format(targetDate, "MMM d, yyyy") : "Select Date"}
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 border-border/40 rounded-xl shadow-xl" align="end">
+                            <Calendar
+                              mode="single"
+                              selected={targetDate}
+                              onSelect={setTargetDate}
+                              initialFocus
+                              className="p-3"
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                      <ShoppingCart className="w-3 h-3" /> Active Roster
+                    </h3>
+                    <span className="text-[10px] font-black uppercase tracking-widest bg-muted/30 px-2 py-0.5 rounded-md text-muted-foreground">
+                      {cart.length} Items
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {cart.length === 0 ? (
+                      <div className="p-8 border border-dashed border-border/40 rounded-xl flex flex-col items-center justify-center text-muted-foreground bg-muted/5">
+                        <PackageSearch className="w-8 h-8 mb-3 opacity-20" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-center mt-2">Awaiting Selections <br/> <span className="text-[10px] opacity-60 normal-case">Add items from the catalog.</span></span>
+                      </div>
+                    ) : (
+                      cart.map((item) => (
+                        <div key={item.id} className="p-4 bg-muted/10 border border-border/40 rounded-xl flex flex-col gap-4 group relative transition-all hover:border-primary/30 hover:bg-muted/20">
+                          
+                          <div className="flex justify-between items-start gap-4">
+                            <span className="font-black text-foreground tracking-tight truncate flex-1">
+                              {item.product.name}
+                            </span>
+                            <button 
+                              type="button" 
+                              onClick={() => removeCartItem(item.id)}
+                              className="text-muted-foreground hover:text-destructive transition-all shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            {item.product.hasVariants && item.product.variants?.length > 0 && (
+                              <div className="w-full sm:w-[160px] shrink-0 min-w-0">
+                                <Select 
+                                  value={item.variant?.name || ""} 
+                                  onValueChange={(val) => updateCartItemVariant(item.id, val)}
+                                >
+                                  <SelectTrigger className="h-9 bg-background border-border/40 font-bold text-xs rounded-lg focus:ring-primary shadow-sm w-full">
+                                    <SelectValue placeholder="Select Size" />
+                                  </SelectTrigger>
+                                  <SelectContent className="border-border/40 rounded-lg">
+                                    {item.product.variants.map((v: any) => (
+                                      <SelectItem key={v.name} value={v.name} className="font-bold text-xs">
+                                        {v.name} &mdash; {formatPHP(v.price)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-2 sm:mt-0">
+                              <span className="text-sm font-black text-muted-foreground shrink-0">
+                                {item.product.hasVariants 
+                                  ? (item.variant ? formatPHP(item.variant.price) : "---")
+                                  : formatPHP(item.product.price)}
+                              </span>
+
+                              <div className="flex items-center gap-1 shrink-0 bg-background border border-border/40 rounded-lg p-0.5 shadow-sm">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => updateCartItemQuantity(item.id, -1)}
+                                  className="h-7 w-7 rounded-md hover:bg-muted/50"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <span className="w-8 text-center font-black text-sm tabular-nums">
+                                  {item.quantity}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => updateCartItemQuantity(item.id, 1)}
+                                  className="h-7 w-7 rounded-md hover:bg-muted/50 text-primary"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </form>
             </div>
 
-            {/* 3. Catalog Selection */}
-            <div className="space-y-4">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-primary border-b border-border/20 pb-2">
-                Product Catalog
+            <div className="p-6 bg-muted/5 border-t border-border/40 shrink-0">
+              <div className="flex items-center justify-between mb-4 gap-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0">
+                  Transaction Total
+                </span>
+                <span className="text-3xl sm:text-4xl font-black text-primary tracking-tighter tabular-nums leading-none text-right break-words max-w-[60%]">
+                  {formatPHP(calculateTotal())}
+                </span>
+              </div>
+              <Button 
+                form="order-form"
+                type="submit" 
+                disabled={loading || cart.length === 0}
+                className="w-full h-14 rounded-xl bg-foreground text-background hover:bg-foreground/90 font-black uppercase tracking-widest text-[11px] transition-all disabled:opacity-50 shadow-lg"
+              >
+                {loading ? "Executing..." : "Commit Order Request"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Column: Catalog Grid */}
+          <div className="flex w-full lg:w-[45%] flex-col bg-muted/10 min-w-0 shrink-0 lg:shrink">
+            <div className="p-6 border-b border-border/40 bg-background/50 backdrop-blur-sm sticky top-0 z-10">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <PackageSearch className="w-3 h-3" /> Catalog Directory
               </h3>
-              
+            </div>
+            
+            <div className="flex-1 lg:overflow-y-auto p-6 no-scrollbar">
               {fetchingProducts ? (
-                <div className="flex justify-center py-6">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                <div className="flex justify-center items-center h-full py-12">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {catalog.map((product) => (
-                    <button
-                      key={product._id}
-                      type="button"
-                      onClick={() => addToCart(product)}
-                      className="flex flex-col items-start p-3 bg-white border border-border/40 rounded-xl shadow-sm hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
-                    >
-                      <span className="text-sm font-bold text-foreground tracking-tight group-hover:text-primary transition-colors line-clamp-1">
-                        {product.name}
-                      </span>
-                      <span className="text-[10px] font-semibold text-muted-foreground mt-1">
-                        {product.hasVariants ? "Multiple Sizes" : formatPHP(product.price)}
-                      </span>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-8">
+                  {catalog.map((product) => {
+                    const cardContent = (
+                      <>
+                        <div className="absolute inset-0 bg-primary/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out pointer-events-none" />
+                        <span className="text-sm font-black text-foreground tracking-tight group-hover:text-primary transition-colors truncate w-full relative z-10 pr-8">
+                          {product.name}
+                        </span>
+                        <span className="text-[11px] font-bold text-muted-foreground mt-2 uppercase tracking-widest relative z-10 flex items-center gap-1">
+                          {product.hasVariants ? (
+                            <>Select Size <ChevronDown className="w-3 h-3" /></>
+                          ) : (
+                            formatPHP(product.price)
+                          )}
+                        </span>
+                        <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <Plus className="w-3 h-3 text-primary" />
+                        </div>
+                      </>
+                    );
+
+                    return product.hasVariants ? (
+                      <Popover key={product._id}>
+                        <PopoverTrigger asChild>
+                          <button className="group flex flex-col items-start p-4 bg-background border border-border/40 rounded-xl shadow-sm hover:border-primary focus:border-primary focus:outline-none transition-all text-left relative overflow-hidden min-w-0 w-full">
+                            {cardContent}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-2 border-border/40 rounded-xl shadow-xl flex flex-col gap-1" align="start" side="bottom">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-1 mb-1">
+                            Select Variant
+                          </span>
+                          {product.variants.map((v: any) => (
+                            <button
+                              key={v.name}
+                              type="button"
+                              onClick={() => addToCart(product, v)}
+                              className="flex items-center justify-between px-3 py-2 hover:bg-primary hover:text-white rounded-lg transition-colors text-xs font-bold text-left w-full group/item"
+                            >
+                              <span>{v.name}</span>
+                              <span className="opacity-70 group-hover/item:text-white group-hover/item:opacity-100 transition-colors">
+                                {formatPHP(v.price)}
+                              </span>
+                            </button>
+                          ))}
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      <button
+                        key={product._id}
+                        type="button"
+                        onClick={() => addToCart(product)}
+                        className="group flex flex-col items-start p-4 bg-background border border-border/40 rounded-xl shadow-sm hover:border-primary focus:border-primary focus:outline-none transition-all text-left relative overflow-hidden min-w-0 w-full"
+                      >
+                        {cardContent}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
-
-            <div className="h-4" /> {/* Scroll margin */}
-          </form>
-        </div>
-
-        {/* Pinned Footer */}
-        <div className="p-8 bg-white border-t border-border/20 shrink-0 z-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
-          <div className="flex items-end justify-between mb-5 px-1">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Total Order Value
-            </span>
-            <span className="text-3xl font-black text-foreground tracking-tighter tabular-nums">
-              {formatPHP(calculateTotal())}
-            </span>
           </div>
-          <Button 
-            form="order-form"
-            type="submit" 
-            disabled={loading || cart.length === 0}
-            className="w-full h-14 rounded-xl bg-primary text-white hover:bg-primary/90 font-bold uppercase tracking-widest text-xs shadow-md shadow-primary/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <ShoppingBag className="w-4 h-4 mb-0.5" /> 
-                Finalize Order
-              </>
-            )}
-          </Button>
-        </div>
 
-      </SheetContent>
-    </Sheet>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
