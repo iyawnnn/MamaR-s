@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api, { fetchOrders, fetchExpenses } from "@/services/api";
 import { formatPHP } from "@/utils/currency";
@@ -8,9 +8,19 @@ import {
   Download,
   Loader2,
   Wallet,
-  ReceiptText
+  ReceiptText,
+  PackageCheck,
+  LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
@@ -85,7 +95,7 @@ export default function ReportsPage() {
   }, [timeFrame, expenses]);
 
   const exportToCSV = () => {
-    if (reportData.rawSales.length === 0) return alert("No data available");
+    if (reportData.rawSales.length === 0) return alert("No data available to export.");
     const headers = ["Date", "Customer", "Product", "Qty", "Total"];
     const rows = reportData.rawSales.map((s: any) => [
       new Date(s.targetDate).toLocaleDateString(),
@@ -97,103 +107,141 @@ export default function ReportsPage() {
     const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map((e) => e.join(",")).join("\n");
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", `mamar_sales_${timeFrame}.csv`);
+    link.setAttribute("download", `mamar_ledger_${timeFrame}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  if (loading && reportData.totalSales === 0) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="w-10 h-10 text-primary animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8 p-8 pt-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-border/40">
-        <div className="space-y-1">
-          <h1 className="text-4xl sm:text-5xl tracking-tight font-black text-foreground font-serif">
+    <div className="flex-1 space-y-8 p-8 pt-6 min-h-screen">
+      
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+        <div className="space-y-2">
+          <h1 className="text-5xl sm:text-6xl font-serif font-black text-primary tracking-tighter leading-none">
             Accounting Hub
           </h1>
-          <p className="text-muted-foreground font-sans text-sm font-medium">
+          <p className="text-muted-foreground font-semibold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             Business intelligence and revenue tracking.
           </p>
         </div>
 
-        <div className="flex bg-muted/30 p-1 rounded-2xl border border-border/40 shadow-sm">
-          {["24h", "7d", "30d", "all"].map((t) => (
+        <Button
+          onClick={exportToCSV}
+          className="group h-14 pl-6 pr-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-all duration-300 shadow-lg flex items-center gap-4 border-none"
+        >
+          <span className="text-[10px] font-black uppercase tracking-[0.25em]">Export Ledger</span>
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center group-hover:-translate-y-1 transition-transform duration-300">
+            <Download className="w-5 h-5 text-white" aria-hidden="true" />
+          </div>
+        </Button>
+      </div>
+
+      {/* KPI Grid Section */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Gross Revenue", value: formatPHP(reportData.totalRevenue), icon: TrendingUp, isPrimary: false },
+          { label: "Operating Expenses", value: formatPHP(reportData.totalExpenses), icon: ReceiptText, isPrimary: false },
+          { label: "Net Profit", value: formatPHP(reportData.netProfit), icon: Wallet, isPrimary: true },
+          { label: "Total Volume", value: reportData.totalSales.toString().padStart(2, "0"), icon: PackageCheck, isPrimary: false },
+        ].map((kpi, idx) => (
+          <div
+            key={idx}
+            className="flex flex-col p-6 rounded-xl border border-border/60 bg-card relative overflow-hidden shadow-sm"
+          >
+            <kpi.icon 
+              className={`absolute -right-6 -bottom-6 w-32 h-32 opacity-[0.04] ${kpi.isPrimary ? 'text-primary' : 'text-foreground'}`} 
+              aria-hidden="true" 
+            />
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] relative z-10">
+              {kpi.label}
+            </span>
+            {/* Reduced from text-5xl to text-2xl lg:text-3xl to accommodate large financial figures safely */}
+            <span className={`mt-4 text-2xl lg:text-3xl font-black tracking-tighter relative z-10 truncate ${kpi.isPrimary ? 'text-primary' : 'text-foreground'}`}>
+              {kpi.value}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Timeframe Controls & Data Section */}
+      <div className="space-y-6">
+        
+        {/* Unified Tab-Style Timeframe Selector */}
+        <div className="bg-muted/40 p-1.5 rounded-xl w-fit h-auto flex flex-wrap gap-2 border border-border/40">
+          {[
+            { id: "24h", label: "Last 24 Hours" },
+            { id: "7d", label: "Last 7 Days" },
+            { id: "30d", label: "Last 30 Days" },
+            { id: "all", label: "All-Time Records" },
+          ].map((t) => (
             <button
-              key={t}
-              onClick={() => setTimeFrame(t)}
-              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                timeFrame === t
-                  ? "bg-foreground text-background shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
+              key={t.id}
+              onClick={() => setTimeFrame(t.id)}
+              className={`rounded-lg px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all border ${
+                timeFrame === t.id
+                  ? "bg-card text-foreground shadow-sm border-border/40"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
               }`}
             >
-              {t}
+              {t.label}
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card p-6 rounded-3xl border border-border/40 shadow-sm flex flex-col justify-between">
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2"><TrendingUp className="w-3 h-3 text-primary"/> Gross Revenue</p>
-          <h3 className="text-3xl font-black text-foreground mt-4">{formatPHP(reportData.totalRevenue)}</h3>
-          <p className="text-[10px] text-muted-foreground font-bold mt-2 uppercase tracking-widest">{reportData.totalSales} Orders Fulfilled</p>
-        </div>
-        <div className="bg-card p-6 rounded-3xl border border-border/40 shadow-sm flex flex-col justify-between">
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2"><ReceiptText className="w-3 h-3 text-destructive"/> Operating Expenses</p>
-          <h3 className="text-3xl font-black text-foreground mt-4">{formatPHP(reportData.totalExpenses)}</h3>
-          <p className="text-[10px] text-muted-foreground font-bold mt-2 uppercase tracking-widest">Ingredients & Overhead</p>
-        </div>
-        <div className="bg-foreground p-6 rounded-3xl shadow-xl flex flex-col justify-between text-background">
-          <p className="text-[10px] font-black opacity-70 uppercase tracking-widest flex items-center gap-2"><Wallet className="w-3 h-3"/> Net Profit</p>
-          <h3 className="text-4xl font-black mt-4">{formatPHP(reportData.netProfit)}</h3>
-          <p className="text-[10px] opacity-70 font-bold mt-2 uppercase tracking-widest">Revenue - Expenses</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 bg-card rounded-3xl border border-border/40 shadow-sm overflow-hidden flex flex-col">
+        {/* Top Performers Table */}
+        <div className="rounded-xl border border-border/40 bg-card overflow-hidden shadow-sm">
           <div className="p-6 border-b border-border/40 bg-muted/10">
-            <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-primary" /> Top Performers
+            <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.25em] flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-primary" /> Top Performers by Revenue
             </h3>
           </div>
-          <table className="w-full text-sm text-left">
-            <thead className="text-[10px] text-muted-foreground uppercase font-black bg-background border-b border-border/40">
-              <tr>
-                <th className="px-6 py-4">Item Name</th>
-                <th className="px-6 py-4 text-center">Volume</th>
-                <th className="px-6 py-4 text-right">Revenue Generated</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40 bg-card">
-              {reportData.topProducts.map((p: any, i) => (
-                <tr key={i} className="hover:bg-muted/10 transition-colors">
-                  <td className="px-6 py-4 font-bold text-foreground text-sm">{p.productName}</td>
-                  <td className="px-6 py-4 text-center text-muted-foreground font-black text-sm">{p.quantity}</td>
-                  <td className="px-6 py-4 text-right font-black text-primary text-sm">{formatPHP(p.totalPrice)}</td>
-                </tr>
-              ))}
-              {reportData.topProducts.length === 0 && (
-                <tr><td colSpan={3} className="text-center py-8 text-muted-foreground text-xs font-bold">No sales data for this period.</td></tr>
+          
+          <Table>
+            <TableHeader className="bg-muted/5 border-b border-border/40">
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground h-14 px-6">Item Designation</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground h-14 px-6 text-center">Volume Moved</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground h-14 px-6 text-right">Revenue Generated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border/20">
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <span className="text-sm font-semibold tracking-tight animate-pulse">Compiling ledger data...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : reportData.topProducts.length ? (
+                reportData.topProducts.map((p: any, i) => (
+                  <TableRow key={i} className="border-none hover:bg-muted/10 transition-colors">
+                    <TableCell className="py-4 px-6 font-bold text-foreground text-sm align-middle">
+                      {p.productName}
+                    </TableCell>
+                    <TableCell className="py-4 px-6 text-center text-muted-foreground font-black text-sm align-middle">
+                      {p.quantity}
+                    </TableCell>
+                    <TableCell className="py-4 px-6 text-right font-black text-foreground text-sm align-middle">
+                      {formatPHP(p.totalPrice)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <LayoutGrid className="w-8 h-8 mb-4 opacity-20" />
+                      <span className="text-sm font-semibold tracking-tight">No sales data recorded for this period.</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="bg-card rounded-3xl p-8 border border-border/40 shadow-sm flex flex-col justify-center min-h-[300px]">
-          <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Export Data</h3>
-          <p className="text-muted-foreground text-xs mb-8 font-medium">Download current timeframe as CSV for accounting.</p>
-          <Button onClick={exportToCSV} className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20">
-            <Download className="w-4 h-4 mr-2" /> Download Report
-          </Button>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>
