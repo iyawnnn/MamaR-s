@@ -57,7 +57,8 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
       <nav className="flex-1 overflow-y-auto px-6 py-4 space-y-8 no-scrollbar">
         <div>
-          <p className="mb-4 px-2 text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground/40">
+          {/* Removed /40 opacity for high-contrast visibility */}
+          <p className="mb-4 px-2 text-[10px] text-primary uppercase tracking-[0.25em]">
             Operations
           </p>
           <div className="space-y-1">
@@ -68,7 +69,8 @@ const Sidebar = ({ onClose }: SidebarProps) => {
         </div>
 
         <div>
-          <p className="mb-4 px-2 text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground/40">
+          {/* Removed /40 opacity for high-contrast visibility */}
+          <p className="mb-4 px-2 text-[10px] text-primary uppercase tracking-[0.25em]">
             Data & Finance
           </p>
           <div className="space-y-1">
@@ -80,16 +82,19 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       </nav>
 
       <div className="shrink-0 p-6">
+        {/* Structurally matched to the SidebarLink geometric parameters */}
         <Button
           variant="ghost"
           onClick={handleLogout}
-          className="w-full justify-start rounded-2xl px-4 py-4 text-sm font-bold text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 group"
+          className="w-full h-11 px-3 justify-start rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-all group"
         >
-          <LogOut 
-            className="mr-4 h-5 w-5 text-muted-foreground/60 group-hover:text-primary transition-colors" 
-            aria-hidden="true" 
-          />
-          <span className="tracking-tight">Sign Out</span>
+          <div className="flex items-center gap-3">
+            <LogOut 
+              className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" 
+              aria-hidden="true" 
+            />
+            <span className="tracking-tight">Sign Out</span>
+          </div>
         </Button>
       </div>
     </aside>
@@ -101,24 +106,26 @@ const SidebarLink = ({ item, onClose }: { item: any; onClose?: () => void }) => 
     to={item.path}
     onClick={onClose}
     className={({ isActive }) =>
-      `group flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-200 ${
+      `flex items-center gap-3 w-full h-11 px-3 rounded-lg transition-all group ${
         isActive
-          ? "bg-primary/10 text-primary shadow-sm"
-          : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+          ? "bg-primary/10 text-primary"
+          : "text-foreground hover:bg-muted/50"
       }`
     }
   >
     {({ isActive }) => (
       <>
         <item.icon
-          className={`h-5 w-5 transition-colors ${
+          className={`w-4 h-4 transition-colors ${
             isActive
               ? "text-primary"
-              : "text-muted-foreground/60 group-hover:text-foreground"
+              : "text-muted-foreground group-hover:text-foreground"
           }`}
           aria-hidden="true"
         />
-        <span className="tracking-tight">{item.name}</span>
+        <span className="text-sm font-medium tracking-tight">
+          {item.name}
+        </span>
       </>
     )}
   </NavLink>

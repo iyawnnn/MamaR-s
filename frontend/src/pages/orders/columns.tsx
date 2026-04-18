@@ -24,11 +24,11 @@ export const columns: ColumnDef<IOrder>[] = [
 
       return (
         <div className="flex flex-col gap-1">
-          <div className="text-sm font-semibold text-foreground tracking-tight">
+          <div className="text-sm font-medium text-foreground">
             {format(date, "MMM dd, yyyy")}
           </div>
           {isUrgent && (
-            <span className="w-fit inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-red-600 border border-red-100 mt-1">
+            <span className="w-fit inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 border border-red-100">
               <Clock className="w-3 h-3 mr-1.5" />
               {hoursRemaining}h left
             </span>
@@ -45,10 +45,10 @@ export const columns: ColumnDef<IOrder>[] = [
       const name = row.original.customerName;
       return (
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+          <span className="text-xs font-medium text-muted-foreground">
             #{id}
           </span>
-          <span className="text-sm font-semibold text-foreground tracking-tight">
+          <span className="text-sm font-medium text-foreground">
             {name}
           </span>
         </div>
@@ -60,7 +60,7 @@ export const columns: ColumnDef<IOrder>[] = [
     header: "Contact Details",
     cell: ({ row }) => {
       return (
-        <span className="text-xs font-medium text-muted-foreground tracking-wide block">
+        <span className="text-sm font-medium text-muted-foreground">
           {row.original.customerContact || "---"}
         </span>
       );
@@ -74,8 +74,8 @@ export const columns: ColumnDef<IOrder>[] = [
       return (
         <div className="flex flex-col gap-1.5">
           {items.map((item, idx) => (
-            <div key={idx} className="text-xs text-foreground/80 font-medium flex items-start gap-2">
-              <span className="font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md text-[10px]">
+            <div key={idx} className="text-sm text-foreground font-medium flex items-start gap-2">
+              <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded-md text-xs">
                 {item.quantity}x
               </span>
               <span className="mt-0.5">
@@ -101,17 +101,17 @@ export const columns: ColumnDef<IOrder>[] = [
       
       return (
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-foreground tracking-tight">
+          <span className="text-sm font-medium text-foreground">
             {formatPHP(amount)}
           </span>
           <span
-            className={`w-fit text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border ${
+            className={`w-fit text-xs font-medium capitalize px-2 py-0.5 rounded-md border ${
               status === PaymentStatus.PAID
                 ? "bg-green-50 text-green-700 border-green-200"
                 : "bg-muted/30 text-muted-foreground border-border/40"
             }`}
           >
-            {status}
+            {status.toLowerCase()}
           </span>
         </div>
       );
@@ -125,23 +125,23 @@ export const columns: ColumnDef<IOrder>[] = [
       
       if (status === OrderStatus.PENDING) {
         return (
-          <Badge variant="outline" className="bg-transparent text-muted-foreground border-border/60 shadow-none font-semibold text-[10px] uppercase tracking-widest py-1 px-2.5 rounded-md">
-            {status}
+          <Badge variant="outline" className="bg-transparent text-muted-foreground border-border/60 shadow-none font-medium text-xs capitalize py-1 px-2.5 rounded-md">
+            {status.toLowerCase()}
           </Badge>
         );
       }
       
       if (status === OrderStatus.READY) {
         return (
-          <Badge className="bg-primary/10 text-primary shadow-none font-semibold text-[10px] uppercase tracking-widest py-1 px-2.5 rounded-md border border-primary/20 hover:bg-primary/20">
-            {status}
+          <Badge className="bg-primary/10 text-primary shadow-none font-medium text-xs capitalize py-1 px-2.5 rounded-md border border-primary/20 hover:bg-primary/20">
+            {status.toLowerCase()}
           </Badge>
         );
       }
 
       return (
-        <Badge variant="secondary" className="bg-muted text-foreground hover:bg-muted/80 shadow-none font-semibold text-[10px] uppercase tracking-widest py-1 px-2.5 rounded-md border border-border/40">
-          {status}
+        <Badge variant="secondary" className="bg-muted text-foreground hover:bg-muted/80 shadow-none font-medium text-xs capitalize py-1 px-2.5 rounded-md border border-border/40">
+          {status.toLowerCase()}
         </Badge>
       );
     },
@@ -157,13 +157,13 @@ export const columns: ColumnDef<IOrder>[] = [
         <div className="flex justify-end pr-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-md hover:bg-muted/20 border border-transparent hover:border-border/40 transition-colors">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-muted/20 border border-transparent hover:border-border/40 transition-colors">
                 <Settings2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-white border-border/40 shadow-lg rounded-lg p-1.5">
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold px-2 pb-1.5">
+            <DropdownMenuContent align="end" className="w-48 bg-card border-border/40 shadow-sm rounded-lg p-1.5">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-medium px-2 pb-1.5">
                 Operations
               </DropdownMenuLabel>
               
@@ -179,7 +179,7 @@ export const columns: ColumnDef<IOrder>[] = [
               {order.status === OrderStatus.READY && (
                 <DropdownMenuItem 
                   onClick={() => fulfillAndPrint(order)}
-                  className="text-foreground font-bold text-sm rounded-md cursor-pointer focus:bg-muted/10 transition-colors"
+                  className="text-foreground font-medium text-sm rounded-md cursor-pointer focus:bg-muted/10 transition-colors"
                 >
                   Fulfill & Print
                 </DropdownMenuItem>

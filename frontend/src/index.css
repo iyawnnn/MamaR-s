@@ -1,13 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/manrope";
-@import "@fontsource-variable/inter";
 
 @layer base {
   html, body {
-    @apply bg-background text-foreground antialiased m-0 p-0;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-background text-foreground font-sans antialiased m-0 p-0;
   }
   * {
     @apply border-border outline-ring/50;
@@ -15,67 +12,69 @@
 }
 
 :root {
-  /* Base Canvas: Your Brand Creme */
-  --background: #fffae9;
-  /* Main Text: Deep espresso for high-contrast readability */
-  --foreground: #2b1d1d;
+  /* Base Canvas: Doctor */
+  --background: #f9f9f8;
+  /* Main Text: Cursed Black */
+  --foreground: #131313;
   
-  /* Elevated elements like Cards and Dropdowns */
+  /* Elevated elements */
   --card: #ffffff;
-  --card-foreground: #2b1d1d;
+  --card-foreground: #131313;
   --popover: #ffffff;
-  --popover-foreground: #2b1d1d;
+  --popover-foreground: #131313;
   
-  /* Primary Actions: Your Brand Red */
-  --primary: #af0e0e;
-  --primary-foreground: #fffae9;
+  /* Primary Actions: Phoenix Flames */
+  --primary: #f9a51b;
+  --primary-foreground: #131313;
   
-  /* Secondary Surfaces (Slightly darker creme for hover states) */
-  --secondary: #f2ead3;
-  --secondary-foreground: #af0e0e;
+  /* Secondary Surfaces: Little Sun Dress */
+  --secondary: #fac95a;
+  --secondary-foreground: #131313;
   
-  /* Muted text and backgrounds */
-  --muted: #f2ead3;
-  --muted-foreground: #7a6363;
+  /* Muted text and backgrounds: Subtle Touch */
+  --muted: #dbdbd9;
+  /* Muted text: Wolverine */
+  --muted-foreground: #919a9f;
   
   /* Accents */
-  --accent: #f2ead3;
-  --accent-foreground: #af0e0e;
+  --accent: #fac95a;
+  --accent-foreground: #131313;
   
   /* Destructive actions */
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   
-  /* Borders and Inputs */
-  --border: #e6d8c3;
-  --input: #e6d8c3;
-  --ring: #af0e0e;
+  /* Borders and Inputs: Subtle Touch */
+  --border: #dbdbd9;
+  --input: #dbdbd9;
+  /* Focus Ring: Phoenix Flames */
+  --ring: #f9a51b;
   
   /* Charts */
-  --chart-1: #af0e0e;
-  --chart-2: #c95b2b;
-  --chart-3: #e26a35;
-  --chart-4: #f59e0b;
-  --chart-5: #10b981;
+  --chart-1: #f9a51b;
+  --chart-2: #fac95a;
+  --chart-3: #919a9f;
+  --chart-4: #dbdbd9;
+  --chart-5: #131313;
   
   /* Standard Border Radius */
   --radius: 0.5rem;
   
   /* Sidebar Specifics */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #2b1d1d;
-  --sidebar-primary: #af0e0e;
-  --sidebar-primary-foreground: #fffae9;
-  --sidebar-accent: #f2ead3;
-  --sidebar-accent-foreground: #af0e0e;
-  --sidebar-border: #e6d8c3;
-  --sidebar-ring: #af0e0e;
+  --sidebar: #f9f9f8;
+  --sidebar-foreground: #131313;
+  --sidebar-primary: #f9a51b;
+  --sidebar-primary-foreground: #131313;
+  --sidebar-accent: #dbdbd9;
+  --sidebar-accent-foreground: #131313;
+  --sidebar-border: #dbdbd9;
+  --sidebar-ring: #f9a51b;
 }
 
 @theme inline {
-  --font-sans: 'Geist', system-ui, sans-serif;
-  --font-serif: 'Instrument Serif', serif;
-  --font-heading: 'Inter Variable', sans-serif;
+  --font-sans: 'Figtree', system-ui, sans-serif;
+  --font-serif: 'Figtree', serif;
+  --font-heading: 'Figtree', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -116,18 +115,16 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Add to src/index.css */
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
-/* Global enforcement for the main scrolling areas */
 body, main, aside, div {
   scrollbar-width: none;
   -ms-overflow-style: none;

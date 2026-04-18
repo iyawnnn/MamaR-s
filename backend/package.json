@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed:admin": "tsx scripts/createAdmin.ts",
-    "seed:products": "tsx scripts/seedProducts.ts"
+    "seed:products": "tsx scripts/seedProducts.ts",
+    "seed:mock": "tsx scripts/seedMockData.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -22,6 +23,7 @@
     "mongoose": "^8.19.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

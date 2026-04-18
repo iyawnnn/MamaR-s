@@ -13,8 +13,8 @@ const createAdmin = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('MongoDB Connected');
 
-    const adminEmail = 'admin@mamars.local';
-    const adminPassword = 'admin'; 
+    const adminEmail = 'mariadiofanyrazon@gmail.com';
+    const adminPassword = 'ianmac2004'; 
 
     // Clear the existing local admin if you want to reset it
     const existingAdmin = await User.findOne({ email: adminEmail });
