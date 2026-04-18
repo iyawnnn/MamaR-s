@@ -6,18 +6,18 @@ import { formatPHP } from "@/utils/currency"
 import { 
   TrendingUp, 
   Wallet, 
-  Activity,
-  ArrowRight,
-  Download,
-  TerminalSquare,
-  PackageCheck
+  PackageCheck,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+  Percent,
+  Server,
+  Activity
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -31,7 +31,8 @@ import {
   YAxis,
   Pie,
   PieChart,
-  Label
+  Cell,
+  Tooltip
 } from "recharts"
 import {
   ChartContainer,
@@ -40,23 +41,16 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 
-// --- STRICT YELLOW COLOR MAPPING (From index.css) ---
 const areaChartConfig = {
-  revenue: { label: "Gross Revenue", color: "var(--primary)" },
-  expenses: { label: "Operating Expenses", color: "var(--secondary)" },
+  revenue: { label: "Revenue", color: "var(--primary)" },
 } satisfies ChartConfig
 
 const barChartConfig = {
-  orders: { label: "Total Orders", color: "var(--primary)" },
+  orders: { label: "Orders", color: "var(--primary)" },
 } satisfies ChartConfig
 
 const pieChartConfig = {
-  volume: { label: "Units Sold" },
-  item1: { label: "Top 1", color: "var(--primary)" },
-  item2: { label: "Top 2", color: "var(--secondary)" },
-  item3: { label: "Top 3", color: "var(--chart-3)" },
-  item4: { label: "Top 4", color: "var(--chart-4)" },
-  other: { label: "Other", color: "var(--chart-5)" },
+  volume: { label: "Volume" },
 } satisfies ChartConfig
 
 export default function DashboardPage() {
@@ -68,9 +62,8 @@ export default function DashboardPage() {
     expenses: [] as any[]
   })
 
-  // 1. Fetch Real Data
   React.useEffect(() => {
-    const loadData = async () => {
+    const loadLedgerData = async () => {
       try {
         setLoading(true)
         const [fetchedOrders, fetchedExpenses] = await Promise.all([
@@ -82,37 +75,47 @@ export default function DashboardPage() {
           expenses: fetchedExpenses || []
         })
       } catch (err) {
-        console.error("Dashboard Data Sync Failed:", err)
+        console.error("Ledger synchronization failed", err)
       } finally {
         setLoading(false)
       }
     }
-    loadData()
+    loadLedgerData()
   }, [])
 
-  // 2. Compute Dashboard Metrics & Charts
-  const { kpis, cashFlowData, dailyTraffic, topPerformers } = React.useMemo(() => {
+  const { kpis, cashFlowData, dailyTraffic, topPerformers, recentOrders, insights } = React.useMemo(() => {
     const now = new Date()
-    const cutoff = new Date()
-    cutoff.setDate(now.getDate() - timeRange)
+    const currentPeriodStart = new Date()
+    currentPeriodStart.setDate(now.getDate() - timeRange)
+    
+    const previousPeriodStart = new Date()
+    previousPeriodStart.setDate(now.getDate() - (timeRange * 2))
 
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const validOrders = rawData.orders.filter(o => o.status === 'FULFILLED')
+    const validExpenses = rawData.expenses
+    
+    const currentOrders = validOrders.filter(o => new Date(o.targetDate || o.createdAt) >= currentPeriodStart)
+    const previousOrders = validOrders.filter(o => {
+      const d = new Date(o.targetDate || o.createdAt)
+      return d >= previousPeriodStart && d < currentPeriodStart
+    })
 
-    const validOrders = rawData.orders.filter(o => new Date(o.targetDate || o.createdAt) >= cutoff)
-    const validExpenses = rawData.expenses.filter(e => new Date(e.date) >= cutoff)
-    const fulfilledOrders = validOrders.filter(o => o.status === 'FULFILLED')
+    const currentExpenses = validExpenses.filter(e => new Date(e.date) >= currentPeriodStart).reduce((acc, e) => acc + (e.amount || 0), 0)
+    const currentRevenue = currentOrders.reduce((acc, o) => acc + (o.amountPaid || o.totalAmount || 0), 0)
+    const previousRevenue = previousOrders.reduce((acc, o) => acc + (o.amountPaid || o.totalAmount || 0), 0)
+    
+    const calculateDelta = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0
+      return ((current - previous) / previous) * 100
+    }
 
-    // --- KPIs ---
-    const todaysOrders = fulfilledOrders.filter(o => new Date(o.targetDate || o.createdAt).getTime() >= todayStart)
+    const avgTicket = currentOrders.length ? (currentRevenue / currentOrders.length) : 0
+    const operatingMargin = currentRevenue > 0 ? ((currentRevenue - currentExpenses) / currentRevenue) * 100 : 0
+
     const activeOrders = rawData.orders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING')
-    
-    const todaysRevenue = todaysOrders.reduce((acc, o) => acc + (o.amountPaid || o.totalAmount || 0), 0)
-    const totalRevenuePeriod = fulfilledOrders.reduce((acc, o) => acc + (o.amountPaid || o.totalAmount || 0), 0)
-    const avgTicket = fulfilledOrders.length ? (totalRevenuePeriod / fulfilledOrders.length) : 0
+    const pendingQueueValue = activeOrders.reduce((acc, o) => acc + (o.amountPaid || o.totalAmount || 0), 0)
 
-    // --- AREA CHART (Cash Flow) & BAR CHART (Daily Orders) ---
     const dailyMap = new Map<string, { date: string, revenue: number, expenses: number, orders: number }>()
-    
     for (let i = timeRange - 1; i >= 0; i--) {
       const d = new Date()
       d.setDate(now.getDate() - i)
@@ -120,7 +123,7 @@ export default function DashboardPage() {
       dailyMap.set(dateStr, { date: dateStr, revenue: 0, expenses: 0, orders: 0 })
     }
 
-    fulfilledOrders.forEach(o => {
+    currentOrders.forEach(o => {
       const dStr = new Date(o.targetDate || o.createdAt).toISOString().split('T')[0]
       if (dailyMap.has(dStr)) {
         const day = dailyMap.get(dStr)!
@@ -136,265 +139,326 @@ export default function DashboardPage() {
       }
     })
 
-    // --- PIE CHART (Top Performers) ---
     const productCount: Record<string, number> = {}
-    fulfilledOrders.forEach(o => {
+    currentOrders.forEach(o => {
       o.items?.forEach((item: any) => {
-        const name = item.product?.name || "Unknown"
+        const name = item.product?.name || "Uncategorized"
         productCount[name] = (productCount[name] || 0) + (item.quantity || 1)
       })
     })
 
     const sortedProducts = Object.entries(productCount).sort((a, b) => b[1] - a[1])
     const top4 = sortedProducts.slice(0, 4)
-    const others = sortedProducts.slice(4).reduce((acc, curr) => acc + curr[1], 0)
-    
-    const palette = ["var(--primary)", "var(--secondary)", "var(--chart-3)", "var(--chart-4)"]
     const pieData = top4.map((p, i) => ({
       name: p[0],
       volume: p[1],
-      fill: palette[i]
+      opacity: 1 - (i * 0.2) 
     }))
 
-    if (others > 0) {
-      pieData.push({ name: "Other", volume: others, fill: "var(--chart-5)" })
-    }
+    const sortedRecentOrders = [...rawData.orders].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ).slice(0, 4)
+
+    const hourCounts = new Array(24).fill(0)
+    currentOrders.forEach(o => {
+      const hour = new Date(o.createdAt).getHours()
+      hourCounts[hour]++
+    })
+    const peakHour = hourCounts.indexOf(Math.max(...hourCounts))
+    const peakHourStr = peakHour > 0 ? `${peakHour}:00 to ${peakHour + 1}:00` : 'N/A'
+    const peakVolume = Math.max(...hourCounts)
 
     return {
-      kpis: { todaysRevenue, activeOrders: activeOrders.length, avgTicket, totalVolume: fulfilledOrders.length },
+      kpis: { 
+        currentRevenue, 
+        activeQueueCount: activeOrders.length, 
+        pendingQueueValue,
+        avgTicket, 
+        currentVolume: currentOrders.length, 
+        revenueDelta: calculateDelta(currentRevenue, previousRevenue), 
+        volumeDelta: calculateDelta(currentOrders.length, previousOrders.length),
+        operatingMargin
+      },
       cashFlowData: Array.from(dailyMap.values()),
       dailyTraffic: Array.from(dailyMap.values()).map(d => ({ date: d.date, orders: d.orders })),
-      topPerformers: pieData
+      topPerformers: pieData,
+      recentOrders: sortedRecentOrders,
+      insights: { peakHourStr, peakVolume }
     }
   }, [rawData, timeRange])
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-screen">
-        <span className="text-sm font-black tracking-widest uppercase animate-pulse text-primary">Synchronizing Ledger...</span>
+      <div className="flex-1 flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-1 w-24 bg-primary rounded overflow-hidden relative">
+            <div className="absolute inset-0 bg-background/50 animate-pulse" />
+          </div>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest font-satoshi">Establishing Connection</span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-4 min-h-screen animate-in fade-in duration-500">
+    <div className="flex-1 p-8 space-y-6 min-h-screen bg-background font-satoshi animate-in fade-in duration-500">
       
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-0">
-        <div className="space-y-1">
-          <h1 
-            className="text-5xl sm:text-6xl font-black text-foreground tracking-tighter leading-none" 
-            style={{ fontFamily: '"Instrument Serif", serif' }}
-          >
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-border/40">
+        <div className="space-y-2">
+          <h1 className="text-5xl sm:text-6xl font-black text-primary tracking-tighter leading-none capitalize">
             Dashboard
           </h1>
-          <p className="text-muted-foreground font-semibold flex items-center gap-2 text-sm">
+          <p className="text-muted-foreground font-semibold flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            Live business intelligence and operations overview.
+            Overview of your business intelligence and operations ledger.
           </p>
         </div>
 
-        <div className="flex gap-3 items-center">
-          <Button 
-            variant="outline" 
-            className="h-10 px-5 rounded-lg font-black text-[10px] uppercase tracking-widest border-border text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-all flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" /> Export Report
-          </Button>
-          <Button 
-            className="h-10 pl-5 pr-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-black text-[10px] uppercase tracking-widest shadow-sm transition-all flex items-center gap-2"
-          >
-            Launch POS <TerminalSquare className="w-4 h-4" />
-          </Button>
+        <div className="flex bg-muted/20 p-1.5 rounded-lg border border-border/40 w-max">
+          {[7, 14, 30].map(days => (
+            <button
+              key={days}
+              onClick={() => setTimeRange(days)}
+              className={`px-5 py-2 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${
+                timeRange === days 
+                  ? "bg-background text-foreground shadow-sm border border-border/50" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {days}D
+            </button>
+          ))}
         </div>
-      </div>
+      </header>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {[
-          { label: "Today's Revenue", value: formatPHP(kpis.todaysRevenue), icon: TrendingUp, isPrimary: true },
-          { label: "Active Orders", value: kpis.activeOrders.toString().padStart(2, "0"), icon: Activity, isPrimary: false },
-          { label: "Avg. Ticket", value: formatPHP(kpis.avgTicket), icon: Wallet, isPrimary: false },
-          { label: "Period Volume", value: kpis.totalVolume.toString().padStart(2, "0"), icon: PackageCheck, isPrimary: false },
-        ].map((kpi, idx) => (
-          <div key={idx} className="flex flex-col p-6 rounded-xl border border-border bg-card relative overflow-hidden shadow-sm">
-            <kpi.icon className={`absolute -right-6 -bottom-6 w-32 h-32 opacity-[0.03] ${kpi.isPrimary ? 'text-primary' : 'text-foreground'}`} aria-hidden="true" />
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] relative z-10 flex justify-between">
-              {kpi.label}
-            </span>
-            <span className={`mt-2 text-3xl font-black tracking-tighter relative z-10 truncate ${kpi.isPrimary ? 'text-primary' : 'text-foreground'}`}>
-              {kpi.value}
-            </span>
+          { title: "Gross Revenue", value: formatPHP(kpis.currentRevenue), icon: Wallet, delta: kpis.revenueDelta },
+          { title: "Fulfillment Volume", value: kpis.currentVolume.toString(), icon: PackageCheck, delta: kpis.volumeDelta },
+          { title: "Average Ticket", value: formatPHP(kpis.avgTicket), icon: TrendingUp, delta: null },
+          { title: "Operating Margin", value: `${kpis.operatingMargin.toFixed(1)}%`, icon: Percent, delta: null },
+        ].map((metric, idx) => (
+          <div key={idx} className="p-6 rounded-2xl border border-border/40 bg-gradient-to-br from-card/30 to-card/10 flex flex-col justify-between gap-6 transition-all hover:border-border/60">
+            <div className="flex justify-between items-start">
+              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{metric.title}</span>
+              <metric.icon className="w-4 h-4 text-muted-foreground/40" />
+            </div>
+            <div>
+              <span className="text-3xl font-black tracking-tight text-foreground block">{metric.value}</span>
+              <div className="mt-2 h-4 flex items-center">
+                {metric.delta !== null ? (
+                  <span className={`text-xs font-bold flex items-center ${metric.delta >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {metric.delta >= 0 ? <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" /> : <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />}
+                    {Math.abs(metric.delta).toFixed(1)}% <span className="text-muted-foreground/40 ml-1.5 font-medium tracking-normal normal-case">vs prior period</span>
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground/40 font-medium">Period calculation</span> 
+                )}
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Main Analytics Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Cash Flow Dynamics (Area Chart) */}
-        <Card className="xl:col-span-2 shadow-sm rounded-xl flex flex-col border-border/60">
-          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-4 sm:flex-row bg-muted/10 rounded-t-xl">
-            <div className="grid flex-1 gap-0.5">
-              <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-foreground">Cash Flow Dynamics</CardTitle>
-              <CardDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Revenue vs Expenses tracking over period.
-              </CardDescription>
-            </div>
-            
-            {/* Segmented Tab Filter */}
-            <div className="flex bg-background p-1 rounded-lg border shadow-sm">
-              {[7, 14, 30].map(days => (
-                <button
-                  key={days}
-                  onClick={() => setTimeRange(days)}
-                  className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${
-                    timeRange === days 
-                      ? "bg-foreground text-background shadow-sm" 
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {days}D
-                </button>
-              ))}
-            </div>
+        <Card className="border border-border/40 shadow-none rounded-xl bg-card/10">
+          <CardHeader className="pb-4 pt-5 px-6">
+            <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Revenue Flow</CardTitle>
           </CardHeader>
-          <CardContent className="px-2 pt-4 sm:px-6 flex-1">
-            <ChartContainer config={areaChartConfig} className="aspect-auto h-[260px] w-full">
-              <AreaChart data={cashFlowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <CardContent className="px-6 pb-6">
+            <ChartContainer config={areaChartConfig} className="h-[200px] w-full">
+              <AreaChart data={cashFlowData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="fillRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4} />
+                  <linearGradient id="fillPrimary" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2} />
                     <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
                   </linearGradient>
-                  <linearGradient id="fillExp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--secondary)" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="var(--secondary)" stopOpacity={0.0} />
-                  </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" opacity={0.5} />
+                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="2 4" opacity={0.3} />
                 <XAxis
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={10}
-                  minTickGap={32}
-                  className="text-[10px] font-black uppercase fill-muted-foreground"
+                  tickMargin={12}
+                  minTickGap={30}
+                  className="text-[10px] font-bold fill-muted-foreground uppercase"
                   tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 />
                 <YAxis 
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={10}
-                  className="text-[10px] font-black uppercase fill-muted-foreground"
-                  tickFormatter={(val) => `₱${val/1000}k`}
+                  tickMargin={12}
+                  width={65}
+                  className="text-xs font-bold fill-muted-foreground uppercase"
+                  tickFormatter={(val) => `₱${(val/1000).toFixed(0)}k`}
                 />
                 <ChartTooltip
-                  cursor={false}
+                  cursor={{ stroke: 'var(--muted-foreground)', strokeWidth: 1, strokeDasharray: '4 4' }}
                   content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    <ChartTooltipContent 
                       indicator="dot"
+                      labelFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })} 
+                      className="border-border/50 bg-background/95 backdrop-blur shadow-md px-5 py-3 capitalize" 
                     />
                   }
                 />
-                <Area dataKey="expenses" type="monotone" fill="url(#fillExp)" stroke="var(--secondary)" strokeWidth={2} stackId="b" />
-                <Area dataKey="revenue" type="monotone" fill="url(#fillRev)" stroke="var(--primary)" strokeWidth={2} stackId="a" />
+                <Area dataKey="revenue" type="monotone" fill="url(#fillPrimary)" stroke="var(--primary)" strokeWidth={2} activeDot={{ r: 4, fill: "var(--primary)", strokeWidth: 0 }} />
               </AreaChart>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        {/* Top Performers (Pie Chart) */}
-        <Card className="flex flex-col shadow-sm rounded-xl border-border/60">
-          <CardHeader className="items-center pb-2 pt-4 border-b bg-muted/10 rounded-t-xl mb-2">
-            <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-foreground">Top Performers</CardTitle>
-            <CardDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pb-1">Volume distribution by item</CardDescription>
+        <Card className="border border-border/40 shadow-none rounded-xl bg-card/10">
+          <CardHeader className="pb-4 pt-5 px-6">
+            <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Fulfillment Cadence</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 pt-2">
-            {topPerformers.length === 0 ? (
-              <div className="flex h-full items-center justify-center">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">No Sales Data</span>
-              </div>
-            ) : (
-              <ChartContainer config={pieChartConfig} className="mx-auto aspect-square max-h-[240px]">
-                <PieChart>
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                  <Pie
-                    data={topPerformers}
-                    dataKey="volume"
-                    nameKey="name"
-                    innerRadius={65}
-                    outerRadius={90}
-                    strokeWidth={4}
-                    stroke="hsl(var(--background))"
-                  >
-                    <Label
-                      content={({ viewBox }) => {
-                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                          return (
-                            <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
-                              <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-4xl font-black">
-                                {kpis.totalVolume}
-                              </tspan>
-                              <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 24} className="fill-muted-foreground text-[9px] font-black uppercase tracking-widest">
-                                Total Units
-                              </tspan>
-                            </text>
-                          )
-                        }
-                      }}
+          <CardContent className="px-6 pb-6">
+            <ChartContainer config={barChartConfig} className="h-[200px] w-full">
+              <BarChart data={dailyTraffic} margin={{ top: 0, left: -24, right: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="2 4" opacity={0.3} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={12}
+                  minTickGap={24}
+                  className="text-[10px] font-bold fill-muted-foreground uppercase"
+                  tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                />
+                <YAxis tickLine={false} axisLine={false} tickMargin={12} className="text-xs font-bold fill-muted-foreground uppercase" />
+                <ChartTooltip
+                  cursor={{ fill: 'var(--muted)', opacity: 0.1 }}
+                  content={
+                    <ChartTooltipContent 
+                      indicator="dot"
+                      labelFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })} 
+                      className="border-border/50 bg-background/95 backdrop-blur shadow-md px-5 py-3 capitalize" 
                     />
+                  }
+                />
+                <Bar dataKey="orders" fill="var(--primary)" radius={[2, 2, 0, 0]} maxBarSize={28} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8">
+        
+        <Card className="border border-border/40 shadow-none rounded-xl bg-card/10">
+          <CardHeader className="pb-4 pt-6 px-6">
+            <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <Server className="w-4 h-4" /> System Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-6 py-4 space-y-8">
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <span className="text-sm font-bold text-foreground">Active Queue</span>
+                <span className="text-2xl font-mono font-black leading-none">{kpis.activeQueueCount}</span>
+              </div>
+              <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
+                <div className="h-full bg-primary" style={{ width: `${Math.min((kpis.activeQueueCount / 50) * 100, 100)}%` }} />
+              </div>
+              <span className="text-xs text-muted-foreground/60 font-medium mt-2 block">Capacity threshold reference</span>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <span className="text-sm font-bold text-foreground">Peak Operations</span>
+                <span className="text-xl font-mono font-black leading-none">{insights.peakHourStr}</span>
+              </div>
+              <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
+                <div className="h-full bg-muted-foreground/40" style={{ width: `${Math.min((insights.peakVolume / 20) * 100, 100)}%` }} />
+              </div>
+              <span className="text-xs text-muted-foreground/60 font-medium mt-2 block">Highest intake frequency</span>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-end mb-2">
+                <span className="text-sm font-bold text-foreground">Queue Value</span>
+                <span className="text-xl font-mono font-black leading-none">{formatPHP(kpis.pendingQueueValue)}</span>
+              </div>
+              <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
+                <div className="h-full bg-primary/60" style={{ width: `${Math.min((kpis.pendingQueueValue / 50000) * 100, 100)}%` }} />
+              </div>
+              <span className="text-xs text-muted-foreground/60 font-medium mt-2 block">Unrealized revenue pipeline</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border/40 shadow-none rounded-xl bg-card/10 flex flex-col">
+          <CardHeader className="pb-4 pt-6 px-6">
+            <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Velocity by Item</CardTitle>
+          </CardHeader>
+          <CardContent className="px-6 py-2 flex-1 flex flex-col items-center justify-center gap-6">
+            <div className="w-full">
+              <ChartContainer config={pieChartConfig} className="mx-auto aspect-square max-h-[160px] w-full">
+                <PieChart>
+                  <Tooltip 
+                    cursor={false} 
+                    content={
+                      <ChartTooltipContent 
+                        hideLabel 
+                        className="border-border/50 bg-background/95 backdrop-blur px-5 py-3 shadow-md capitalize" 
+                      />
+                    } 
+                  />
+                  <Pie data={topPerformers} dataKey="volume" nameKey="name" innerRadius={50} outerRadius={75} strokeWidth={0} paddingAngle={2}>
+                    {topPerformers.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill="var(--primary)" fillOpacity={entry.opacity} />
+                    ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>
+            </div>
+            <div className="w-full space-y-3">
+              {topPerformers.map((item, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" style={{ opacity: item.opacity }} />
+                    <span className="text-sm font-semibold text-muted-foreground truncate capitalize">{item.name}</span>
+                  </div>
+                  <span className="text-sm font-mono font-bold">{item.volume}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border/40 shadow-none rounded-xl bg-card/10">
+          <CardHeader className="pb-4 pt-6 px-6">
+            <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+              <span className="flex items-center gap-2"><Activity className="w-4 h-4" /> Recent Sync</span>
+              <Clock className="w-4 h-4 opacity-50" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-6 py-2 space-y-3">
+            {recentOrders.length === 0 ? (
+              <p className="text-sm font-medium text-muted-foreground text-center py-6">Ledger empty</p>
+            ) : (
+              recentOrders.map((order) => (
+                <div key={order._id || order.id} className="flex justify-between items-center py-2.5 border-b border-border/20 last:border-0">
+                  <div>
+                    <p className="text-sm font-bold text-foreground uppercase tracking-wider">#{String(order._id || order.id).slice(-5)}</p>
+                    <p className="text-xs font-medium text-muted-foreground/70 mt-1">{new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-mono font-bold text-foreground">{formatPHP(order.amountPaid || order.totalAmount || 0)}</p>
+                    <div className="flex items-center justify-end gap-2 mt-1">
+                      <div className={`w-1.5 h-1.5 rounded-full ${order.status === 'FULFILLED' ? 'bg-emerald-500' : 'bg-primary'}`} />
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">{order.status}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Daily Volume (Bar Chart) */}
-      <Card className="shadow-sm rounded-xl flex flex-col border-border/60">
-        <CardHeader className="flex flex-col items-stretch border-b p-0 sm:flex-row bg-muted/10 rounded-t-xl">
-          <div className="flex flex-1 flex-col justify-center gap-0.5 px-6 pt-4 pb-3 sm:py-4">
-            <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-foreground">Fulfillment Velocity</CardTitle>
-            <CardDescription className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              Total orders processed per day over the selected timeframe.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="px-2 pt-4 sm:p-6">
-          <ChartContainer config={barChartConfig} className="aspect-auto h-[200px] w-full">
-            <BarChart accessibilityLayer data={dailyTraffic} margin={{ top: 10, left: -20, right: 12 }}>
-              <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" opacity={0.5} />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={10}
-                className="text-[10px] font-black uppercase fill-muted-foreground"
-                tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              />
-              <YAxis 
-                tickLine={false}
-                axisLine={false}
-                tickMargin={10}
-                className="text-[10px] font-black uppercase fill-muted-foreground"
-              />
-              <ChartTooltip
-                cursor={{ fill: 'currentColor', opacity: 0.05 }}
-                content={
-                  <ChartTooltipContent 
-                    className="w-[140px]" 
-                    labelFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                  />
-                }
-              />
-              <Bar dataKey="orders" fill="var(--primary)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }
