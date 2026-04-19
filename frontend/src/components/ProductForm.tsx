@@ -62,7 +62,7 @@ export default function ProductForm({ product, onClose }: ProductFormProps) {
     setForm({ ...form, variants: newVariants });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (form.hasVariants) {
@@ -88,7 +88,14 @@ export default function ProductForm({ product, onClose }: ProductFormProps) {
       onClose();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || "Save operation failed.");
+      const data = err?.response?.data;
+      
+      if (data?.error === 'Validation failed' && data?.details) {
+        const zodErrors = data.details.map((d: any) => d.message).join(" | ");
+        alert(`Validation Error: ${zodErrors}`);
+      } else {
+        alert(data?.message || data?.error || "Save operation failed.");
+      }
     } finally {
       setSaving(false);
     }

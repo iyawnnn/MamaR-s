@@ -14,8 +14,8 @@ const router = Router();
 
 const orderItemSchema = z.object({
   product: z.string().min(1, "Product ID is required"),
-  quantity: z.number().int().positive("Quantity must be at least 1"),
-  priceAtTimeOfOrder: z.number().nonnegative("Price cannot be negative"),
+  quantity: z.coerce.number().int().positive("Quantity must be at least 1"),
+  priceAtTimeOfOrder: z.coerce.number().nonnegative("Price cannot be negative"),
 });
 
 const createOrderSchema = z.object({
@@ -23,7 +23,7 @@ const createOrderSchema = z.object({
     customerName: z.string().optional(),
     customerContact: z.string().optional(),
     items: z.array(orderItemSchema).min(1, "Order must contain at least one item"),
-    amountPaid: z.number().nonnegative().optional(),
+    amountPaid: z.coerce.number().nonnegative().optional(),
     targetDate: z.string().optional(),
     notes: z.string().optional()
   }),
@@ -33,7 +33,7 @@ const updateOrderStatusSchema = z.object({
   body: z.object({
     status: z.string().optional(),
     paymentStatus: z.string().optional(),
-    amountPaid: z.number().nonnegative().optional(),
+    amountPaid: z.coerce.number().nonnegative().optional(),
   }).refine(data => Object.keys(data).length > 0, {
     message: "At least one update field must be provided",
   }),

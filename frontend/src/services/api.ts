@@ -3,7 +3,7 @@ import { IExpense, IOrder } from '../types';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/api', 
-  timeout: 10000, 
+  timeout: 60000, // Increased to 60 seconds to handle free-tier cold starts
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -34,7 +34,6 @@ export const setToken = (token: string | null): void => {
 };
 
 export const fetchOrders = async (status?: string): Promise<IOrder[]> => {
-  // If status is 'all', we pass no query params to get everything
   const params = status && status !== 'all' ? { status: status.toUpperCase() } : {};
   const response = await api.get<IOrder[]>('/orders', { params });
   return response.data;
