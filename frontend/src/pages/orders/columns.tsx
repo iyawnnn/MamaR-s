@@ -2,13 +2,14 @@ import { ColumnDef } from "@tanstack/react-table";
 import { format, differenceInHours } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Settings2, Clock } from "lucide-react";
+import { Settings2, Clock, Edit3, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { IOrder, OrderStatus, PaymentStatus } from "@/types";
 import { formatPHP } from "@/utils/currency";
@@ -150,8 +151,11 @@ export const columns: ColumnDef<IOrder>[] = [
     id: "actions",
     cell: ({ row, table }) => {
       const order = row.original;
+      // Extract all necessary action handlers injected via the table meta property
       const updateStatus = (table.options.meta as any)?.updateStatus;
       const fulfillAndPrint = (table.options.meta as any)?.fulfillAndPrint;
+      const onEdit = (table.options.meta as any)?.onEdit;
+      const onDelete = (table.options.meta as any)?.onDelete;
 
       return (
         <div className="flex justify-end pr-2">
@@ -167,9 +171,17 @@ export const columns: ColumnDef<IOrder>[] = [
                 Operations
               </DropdownMenuLabel>
               
+              <DropdownMenuItem 
+                onClick={() => onEdit?.(order)}
+                className="text-sm font-medium rounded-md cursor-pointer focus:bg-muted/10 transition-colors flex items-center gap-2"
+              >
+                <Edit3 className="w-4 h-4 text-muted-foreground" />
+                Edit Details
+              </DropdownMenuItem>
+
               {order.status !== OrderStatus.READY && order.status !== OrderStatus.FULFILLED && (
                 <DropdownMenuItem 
-                  onClick={() => updateStatus(order._id, OrderStatus.READY)}
+                  onClick={() => updateStatus?.(order._id, OrderStatus.READY)}
                   className="text-sm font-medium rounded-md cursor-pointer focus:bg-muted/10 transition-colors"
                 >
                   Mark as Ready
@@ -178,17 +190,28 @@ export const columns: ColumnDef<IOrder>[] = [
               
               {order.status === OrderStatus.READY && (
                 <DropdownMenuItem 
-                  onClick={() => fulfillAndPrint(order)}
+                  onClick={() => fulfillAndPrint?.(order)}
                   className="text-foreground font-medium text-sm rounded-md cursor-pointer focus:bg-muted/10 transition-colors"
                 >
                   Fulfill & Print
                 </DropdownMenuItem>
               )}
 
-              <div className="h-px bg-border/20 my-1 mx-2" />
+              <DropdownMenuSeparator className="bg-border/40 my-1" />
               
-              <DropdownMenuItem className="text-destructive text-sm font-medium rounded-md cursor-pointer focus:bg-red-50 focus:text-destructive transition-colors">
+              <DropdownMenuItem 
+                onClick={() => updateStatus?.(order._id, OrderStatus.CANCELLED)}
+                className="text-sm font-medium rounded-md cursor-pointer focus:bg-muted/10 transition-colors"
+              >
                 Cancel Order
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={() => onDelete?.(order)}
+                className="text-destructive text-sm font-medium rounded-md cursor-pointer focus:bg-red-50 focus:text-destructive transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Record
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

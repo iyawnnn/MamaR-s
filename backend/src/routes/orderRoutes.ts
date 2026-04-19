@@ -2,6 +2,7 @@ import { Router } from "express";
 import { 
   createOrder, 
   getOrders, 
+  updateOrder,
   updateOrderStatus, 
   deleteOrder 
 } from "../controllers/orderController.js";
@@ -19,6 +20,7 @@ router.route("/:id/status")
   .patch(updateOrderStatus);
 
 router.route("/:id")
+  .put(updateOrder)
   .delete(deleteOrder);
 
 export default router;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { fetchOrders, updateOrderStatus } from "@/services/api";
+import { fetchOrders, updateOrderStatus, deleteOrder } from "@/services/api";
 import { IOrder } from "@/types";
 import {
   useReactTable,
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { columns } from "./orders/columns";
 import OrderEntrySheet from "@/components/OrderEntrySheet";
-import { Plus, LayoutGrid, Clock, PackageCheck, CheckCircle2 } from "lucide-react";
+import { Plus, LayoutGrid, Clock, PackageCheck, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useReactToPrint } from "react-to-print";
 import ReceiptPrint from "@/components/ReceiptPrint";
@@ -27,7 +27,14 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<IOrder | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [printOrder, setPrintOrder] = useState<IOrder | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +81,31 @@ export default function OrdersPage() {
     }
   };
 
+  const handleEdit = (order: IOrder) => {
+    setSelectedOrder(order);
+    setTimeout(() => setIsSheetOpen(true), 50);
+  };
+
+  const handleDeleteRequest = (order: IOrder) => {
+    setOrderToDelete(order);
+    setTimeout(() => setIsDeleteModalOpen(true), 50);
+  };
+
+  const executeDelete = async () => {
+    if (!orderToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteOrder(orderToDelete._id);
+      await loadOrders();
+      setIsDeleteModalOpen(false);
+      setTimeout(() => setOrderToDelete(null), 200);
+    } catch (error) {
+      console.error("Failed to delete order:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const stats = {
     all: orders.length,
     pending: orders.filter((o) => o.status === "PENDING").length,
@@ -94,11 +126,13 @@ export default function OrdersPage() {
     meta: {
       updateStatus: handleStatusChange,
       fulfillAndPrint: handleFulfillAndPrint,
+      onEdit: handleEdit,
+      onDelete: handleDeleteRequest,
     },
   });
 
   return (
-    <div className="flex-1 space-y-8 p-8 pt-6 min-h-screen">
+    <div className="flex-1 space-y-8 p-8 pt-6 min-h-screen animate-in fade-in duration-500">
       
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
         <div className="space-y-2">
@@ -112,7 +146,10 @@ export default function OrdersPage() {
         </div>
         
         <Button
-          onClick={() => setIsSheetOpen(true)}
+          onClick={() => {
+            setSelectedOrder(null);
+            setIsSheetOpen(true);
+          }}
           className="group h-14 pl-6 pr-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-all duration-300 shadow-lg flex items-center gap-4 border-none"
         >
           <span className="text-[10px] font-black uppercase tracking-[0.25em]">New Pre-Order</span>
@@ -194,7 +231,15 @@ export default function OrdersPage() {
               ))}
             </TableHeader>
             <TableBody className="divide-y divide-border/20">
-              {table.getRowModel().rows?.length ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <span className="text-sm font-semibold tracking-tight animate-pulse">Syncing order architecture...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
@@ -257,12 +302,57 @@ export default function OrdersPage() {
 
       <OrderEntrySheet
         open={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
+        onOpenChange={(open) => {
+          setIsSheetOpen(open);
+          if (!open) setTimeout(() => setSelectedOrder(null), 200); 
+        }}
+        order={selectedOrder}
+        initialData={selectedOrder}
         onSuccess={() => {
           setActiveTab("all");
           loadOrders();
         }}
       />
+
+      {isDeleteModalOpen && orderToDelete && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+          <div className="bg-card w-full max-w-md rounded-2xl border border-border/40 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-destructive" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-bold text-2xl text-foreground tracking-tight">Revoke Order</h3>
+                <p className="text-sm text-muted-foreground">
+                  Are you certain you want to permanently delete order <span className="font-black text-foreground">#{String(orderToDelete._id).slice(-6).toUpperCase()}</span>? This action bypasses the standard cancellation workflow and cannot be reversed.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 border-t border-border/40 bg-muted/10 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setTimeout(() => setOrderToDelete(null), 200);
+                }}
+                className="h-11 px-6 rounded-xl text-xs font-bold uppercase tracking-widest"
+                disabled={isDeleting}
+              >
+                Abort
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={executeDelete}
+                disabled={isDeleting}
+                className="h-11 px-8 rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg"
+              >
+                {isDeleting ? "Syncing..." : "Execute Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ReceiptPrint ref={receiptRef} order={printOrder} />
     </div>
   );

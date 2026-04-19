@@ -67,6 +67,57 @@ export const getOrders = async (req: Request, res: Response) => {
   }
 };
 
+// New function to handle full document updates from the edit modal
+export const updateOrder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { customerName, customerContact, items, amountPaid, targetDate, notes } = req.body;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (customerName !== undefined) order.customerName = customerName;
+    if (customerContact !== undefined) order.customerContact = customerContact;
+    if (targetDate !== undefined) order.targetDate = targetDate;
+    if (notes !== undefined) order.notes = notes;
+
+    // Recalculate totals if the item list changes
+    if (items && items.length > 0) {
+      let totalAmount = 0;
+      for (const item of items) {
+        const product = await Product.findById(item.product);
+        if (!product) {
+          return res.status(404).json({ message: `Product ${item.product} not found` });
+        }
+        totalAmount += item.quantity * item.priceAtTimeOfOrder;
+      }
+      order.items = items;
+      order.totalAmount = totalAmount;
+    }
+
+    if (amountPaid !== undefined) {
+      order.amountPaid = amountPaid;
+    }
+
+    // Always recalculate payment status based on current amountPaid and totalAmount
+    if (order.amountPaid >= order.totalAmount) {
+      order.paymentStatus = PaymentStatus.PAID;
+    } else if (order.amountPaid > 0) {
+      order.paymentStatus = PaymentStatus.PARTIAL;
+    } else {
+      order.paymentStatus = PaymentStatus.UNPAID;
+    }
+
+    await order.save();
+    res.status(200).json({ message: "Order details updated", order });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

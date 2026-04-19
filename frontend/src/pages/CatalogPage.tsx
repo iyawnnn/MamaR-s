@@ -18,7 +18,8 @@ import {
   Search,
   Package,
   Tag,
-  Box
+  Box,
+  AlertTriangle
 } from "lucide-react";
 import { formatPHP } from "@/utils/currency";
 import { Button } from "@/components/ui/button";
@@ -32,8 +33,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import ProductForm from "@/components/ProductForm";
 
-// Type definition for internal product structure
 type ProductRow = {
   _id: string;
   name: string;
@@ -48,6 +49,15 @@ export default function CatalogPage() {
   const [data, setData] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState("");
+  
+  // Modal States
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
+  
+  // Delete States
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<ProductRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -65,13 +75,36 @@ export default function CatalogPage() {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Aggregate Catalog KPIs
+  const handleEdit = useCallback((product: ProductRow) => {
+    setSelectedProduct(product);
+    setIsFormOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback((product: ProductRow) => {
+    setProductToDelete(product);
+    setIsDeleteModalOpen(true);
+  }, []);
+
+  const executeDelete = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/products/${productToDelete._id}`);
+      await fetchProducts();
+      setIsDeleteModalOpen(false);
+      setProductToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete product:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const stats = useMemo(() => {
     const totalMaster = data.length;
     const singleItems = data.filter((p) => !p.hasVariants).length;
     const variantFamilies = data.filter((p) => p.hasVariants).length;
     
-    // Calculate total individual SKUs (Singles + sum of all variants)
     const totalSKUs = data.reduce((acc, p) => {
       return acc + (p.hasVariants && p.variants ? p.variants.length : 1);
     }, 0);
@@ -79,7 +112,6 @@ export default function CatalogPage() {
     return { totalMaster, singleItems, variantFamilies, totalSKUs };
   }, [data]);
 
-  // Define Table Columns
   const columns = useMemo(() => [
     columnHelper.accessor("name", {
       header: "Item Designation",
@@ -147,18 +179,28 @@ export default function CatalogPage() {
     columnHelper.display({
       id: "actions",
       header: "",
-      cell: () => (
+      cell: info => (
         <div className="flex items-center justify-end gap-2 opacity-40 hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted/50 rounded-lg">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => handleEdit(info.row.original)}
+            className="h-8 w-8 hover:bg-muted/50 rounded-lg"
+          >
             <Edit3 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 rounded-lg">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => confirmDelete(info.row.original)}
+            className="h-8 w-8 hover:bg-destructive/10 rounded-lg"
+          >
             <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive transition-colors" />
           </Button>
         </div>
       ),
     })
-  ], []);
+  ], [handleEdit, confirmDelete]);
 
   const table = useReactTable({
     data,
@@ -179,7 +221,6 @@ export default function CatalogPage() {
   return (
     <div className="flex-1 space-y-8 p-8 pt-6 min-h-screen animate-in fade-in duration-500">
       
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
         <div className="space-y-2">
           <h1 className="text-5xl sm:text-6xl font-serif font-black text-primary tracking-tighter leading-none">
@@ -192,6 +233,10 @@ export default function CatalogPage() {
         </div>
         
         <Button
+          onClick={() => {
+            setSelectedProduct(null);
+            setIsFormOpen(true);
+          }}
           className="group h-14 pl-6 pr-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-all duration-300 shadow-lg flex items-center gap-4 border-none"
         >
           <span className="text-[10px] font-black uppercase tracking-[0.25em]">Add Product</span>
@@ -201,7 +246,6 @@ export default function CatalogPage() {
         </Button>
       </div>
 
-      {/* KPI Grid Section */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: "Master Items", value: stats.totalMaster, icon: BookOpen, isPrimary: true },
@@ -227,10 +271,7 @@ export default function CatalogPage() {
         ))}
       </div>
 
-      {/* Data Table Section */}
       <div className="space-y-6">
-        
-        {/* Search Input */}
         <div className="relative w-full max-w-sm">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <Search className="w-4 h-4 text-muted-foreground" />
@@ -243,7 +284,6 @@ export default function CatalogPage() {
           />
         </div>
 
-        {/* The Catalog Ledger */}
         <div className="rounded-xl border border-border/40 bg-card overflow-hidden shadow-sm">
           <Table>
             <TableHeader className="bg-muted/20 border-b border-border/40">
@@ -289,7 +329,6 @@ export default function CatalogPage() {
             </TableBody>
           </Table>
 
-          {/* Pagination Controls */}
           <div className="flex items-center justify-between px-6 py-4 border-t border-border/40 bg-muted/5">
             <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
               Page <span className="text-foreground">{table.getState().pagination.pageIndex + 1}</span> of{" "}
@@ -318,6 +357,56 @@ export default function CatalogPage() {
           </div>
         </div>
       </div>
+      
+      {isFormOpen && (
+        <ProductForm 
+          product={selectedProduct}
+          onClose={() => {
+            setIsFormOpen(false);
+            setSelectedProduct(null);
+            fetchProducts();
+          }} 
+        />
+      )}
+
+      {isDeleteModalOpen && productToDelete && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-card w-full max-w-md rounded-2xl border border-border/40 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-destructive" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-bold text-2xl text-foreground tracking-tight">Confirm Deletion</h3>
+                <p className="text-sm text-muted-foreground">
+                  Are you certain you want to permanently delete <span className="font-black text-foreground">{productToDelete.name}</span>? This action cannot be reversed and will remove all associated configuration parameters.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 border-t border-border/40 bg-muted/10 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setProductToDelete(null);
+                }}
+                className="h-11 px-6 rounded-xl text-xs font-bold uppercase tracking-widest"
+                disabled={isDeleting}
+              >
+                Abort
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={executeDelete}
+                disabled={isDeleting}
+                className="h-11 px-8 rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg"
+              >
+                {isDeleting ? "Syncing..." : "Execute Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
