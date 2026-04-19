@@ -20,7 +20,8 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.19.1"
+    "mongoose": "^8.19.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.4.0",

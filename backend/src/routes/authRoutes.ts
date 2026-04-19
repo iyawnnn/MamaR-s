@@ -1,16 +1,31 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
 import User from "../models/User.js";
+import { validate } from "../middleware/validate.js";
 import "dotenv/config";
 
 const router = express.Router();
 
-router.post("/signup", async (req, res) => {
+const signupSchema = z.object({
+  body: z.object({
+    name: z.string().min(1, "Name is required"),
+    email: z.string().email("Invalid email format"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  }),
+});
+
+const loginSchema = z.object({
+  body: z.object({
+    email: z.string().email("Invalid email format"),
+    password: z.string().min(1, "Password is required"),
+  }),
+});
+
+router.post("/signup", validate(signupSchema), async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password)
-      return res.status(400).json({ error: "Missing fields" });
 
     const existingUser = await User.findOne({ email });
     if (existingUser)
@@ -28,7 +43,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", validate(loginSchema), async (req, res) => {
   console.log(`\n---> 1. Login attempt received for: ${req.body.email}`);
   try {
     console.log("---> 2. Querying database for user...");

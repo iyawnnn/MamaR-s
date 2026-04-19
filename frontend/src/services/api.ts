@@ -14,6 +14,17 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const setToken = (token: string | null): void => {
   if (token) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
