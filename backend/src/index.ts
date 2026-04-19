@@ -3,7 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 import productRoutes from './routes/productRoutes.js';
 import stockLogRoutes from './routes/stockLogRoutes.js';
@@ -16,31 +18,44 @@ import orderRoutes from './routes/orderRoutes.js';
 const app = express();
 
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.FRONTEND_URL
     : ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true
 };
 app.use(cors(corsOptions));
 
-app.use(helmet({ 
+app.use(helmet({
   crossOriginResourcePolicy: false,
-  crossOriginOpenerPolicy: false 
+  crossOriginOpenerPolicy: false
 }));
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  // Allow 5000 requests in development, but lock it down to 100 in production
-  max: process.env.NODE_ENV === 'production' ? 100 : 5000, 
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 1000 : 5000,
   message: 'Too many requests, try again later.'
 });
 app.use('/api', limiter);
 
 app.use(express.json());
 
-// Global Request Logger
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const logData = {
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      path: req.originalUrl,
+      status: res.statusCode,
+      durationMs: duration,
+      ip: req.ip,
+    };
+    
+    console.log(JSON.stringify(logData));
+  });
+  
   next();
 });
 
@@ -59,14 +74,31 @@ app.use((req: express.Request, res: express.Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5001;
 
-// Strictly bind the server listener to the database connection promise
 connectDB()
   .then(() => {
-    app.listen(Number(PORT), '0.0.0.0', () => {
-      console.log(`🚀 Backend securely running on port ${PORT}`);
+    const server = app.listen(Number(PORT), '0.0.0.0', () => {
+      console.log(`Backend securely running on port ${PORT}`);
     });
+
+    const gracefulShutdown = async () => {
+      server.close(async () => {
+        try {
+          await mongoose.connection.close(false);
+          process.exit(0);
+        } catch (error) {
+          process.exit(1);
+        }
+      });
+      
+      setTimeout(() => process.exit(1), 10000).unref();
+    };
+
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
   })
   .catch((error) => {
     console.error("Critical Failure: Database connection aborted.", error);
