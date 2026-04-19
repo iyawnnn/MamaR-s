@@ -1,16 +1,16 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
-    "seed": "node scripts/seedProducts.js"
+    "dev": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first nodemon --exec tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "seed:admin": "tsx scripts/createAdmin.ts",
+    "seed:products": "tsx scripts/seedProducts.ts",
+    "seed:mock": "tsx scripts/seedMockData.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -23,6 +23,16 @@
     "mongoose": "^8.19.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@faker-js/faker": "^10.4.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/mongoose": "^5.11.96",
+    "@types/node": "^25.6.0",
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
   }
 }
