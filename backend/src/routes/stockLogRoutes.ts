@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
       .populate('productId', 'name category')
       .sort({ date: -1 });
     res.json(logs);
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
 });

@@ -18,7 +18,7 @@ router.get("/logs/all", async (req, res) => {
   try {
     const logs = await StockLog.find().sort({ date: -1 });
     res.json(logs);
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
 });

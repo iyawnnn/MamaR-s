@@ -26,9 +26,12 @@ export const getProducts = async (req: Request, res: Response) => {
       let isLowStock = false;
 
       if (p.hasVariants && p.variants.length > 0) {
-        totalStock = p.variants.reduce((acc: any, v: any) => acc + (v.stock || 0), 0);
+        totalStock = p.variants.reduce(
+          (acc: any, v: any) => acc + (v.stock || 0),
+          0,
+        );
         isLowStock = p.variants.some(
-          (v: any) => v.stock <= (v.lowStockThreshold || 5)
+          (v: any) => v.stock <= (v.lowStockThreshold || 5),
         );
       } else {
         isLowStock = p.stock < p.lowStockThreshold;
@@ -81,6 +84,11 @@ export const updateProduct = async (req: Request, res: Response) => {
     const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
+
+    if (!updated)
+      return res
+        .status(404)
+        .json({ message: "Update failed, product not found" });
 
     if (
       req.body.stock !== undefined &&

@@ -1,13 +1,14 @@
-import { JwtPayload } from 'jsonwebtoken';
-import { IUser } from './index';
+import { JwtPayload } from "jsonwebtoken";
+import { IUser } from "./index";
 
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
       MONGO_URI: string;
       JWT_SECRET: string;
+      JWT_EXPIRES_IN: string;
       PORT?: string;
-      NODE_ENV?: 'development' | 'production' | 'test';
+      NODE_ENV?: "development" | "production" | "test";
     }
   }
 
