@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
+import rateLimit from "express-rate-limit";
 import User from "../models/User.js";
 import { validate } from "../middleware/validate.js";
 import "dotenv/config";
@@ -23,6 +24,15 @@ const loginSchema = z.object({
   }),
 });
 
+// 1. Strict Auth Rate Limiting (Brute-Force Protection)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per window
+  message: { error: 'Too many login attempts from this IP, please try again after 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 router.post("/signup", validate(signupSchema), async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -31,19 +41,35 @@ router.post("/signup", validate(signupSchema), async (req, res) => {
     if (existingUser)
       return res.status(400).json({ error: "User already exists" });
 
-    const newUser = new User({ name, email, password });
+    // 2. Explicit Password Hashing Audit
+    // Generate a secure salt and hash the plaintext password before saving
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = new User({ name, email, password: hashedPassword });
     await newUser.save();
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN as any,
     });
-    res.json({ token, user: newUser });
+    
+    // Explicitly select which user fields to return to prevent leaking the hash
+    res.json({ 
+      token, 
+      user: {
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role
+      } 
+    });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
-router.post("/login", validate(loginSchema), async (req, res) => {
+// The loginLimiter is injected directly into this specific route pipeline
+router.post("/login", loginLimiter, validate(loginSchema), async (req, res) => {
   console.log(`\n---> 1. Login attempt received for: ${req.body.email}`);
   try {
     console.log("---> 2. Querying database for user...");

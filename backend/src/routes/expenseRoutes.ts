@@ -11,7 +11,7 @@ const expenseSchema = z.object({
     description: z.string().min(1, "Description is required"),
     amount: z.number().positive("Amount must be greater than zero"),
     category: z.string().optional(),
-    date: z.string().datetime().optional(),
+    date: z.string().optional(),
   }),
 });
 

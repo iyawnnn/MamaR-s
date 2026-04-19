@@ -13,17 +13,19 @@ import { validate } from "../middleware/validate.js";
 const router = Router();
 
 const orderItemSchema = z.object({
-  productId: z.string().min(1, "Product ID is required"),
+  product: z.string().min(1, "Product ID is required"),
   quantity: z.number().int().positive("Quantity must be at least 1"),
-  price: z.number().nonnegative("Price cannot be negative").optional(),
+  priceAtTimeOfOrder: z.number().nonnegative("Price cannot be negative"),
 });
 
 const createOrderSchema = z.object({
   body: z.object({
+    customerName: z.string().optional(),
+    customerContact: z.string().optional(),
     items: z.array(orderItemSchema).min(1, "Order must contain at least one item"),
-    paymentStatus: z.string().optional(),
-    status: z.string().optional(),
     amountPaid: z.number().nonnegative().optional(),
+    targetDate: z.string().optional(),
+    notes: z.string().optional()
   }),
 });
 
@@ -46,7 +48,6 @@ router.route("/")
 router.route("/:id/status")
   .patch(validate(updateOrderStatusSchema), updateOrderStatus);
 
-// A PUT request generally replaces the resource, so we validate against the full schema
 router.route("/:id")
   .put(validate(createOrderSchema), updateOrder)
   .delete(deleteOrder);

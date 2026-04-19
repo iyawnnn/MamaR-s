@@ -10,10 +10,18 @@ const router = express.Router();
 const productSchema = z.object({
   body: z.object({
     name: z.string().min(1, "Product name is required"),
-    category: z.string().min(1, "Category is required"),
-    price: z.number().positive("Price must be greater than zero"),
+    hasVariants: z.boolean().optional(),
+    sellingPrice: z.number().nonnegative("Price cannot be negative").optional(),
     stock: z.number().int().nonnegative("Stock cannot be negative"),
-    minStockLevel: z.number().int().nonnegative().optional(),
+    lowStockThreshold: z.number().int().nonnegative().optional(),
+    variants: z.array(
+      z.object({
+        name: z.string().min(1, "Variant name is required"),
+        price: z.number().nonnegative(),
+        stock: z.number().int().nonnegative(),
+        lowStockThreshold: z.number().int().nonnegative().optional(),
+      })
+    ).optional(),
   }),
 });
 
