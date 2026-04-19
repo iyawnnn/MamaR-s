@@ -11,24 +11,15 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            // Strictly match core React packages
-            if (id.match(/\/node_modules\/(react|react-dom|react-router-dom)\//)) {
-              return "vendor-react";
-            }
-            // Isolate heavy visualization libraries
-            if (id.match(/\/node_modules\/(recharts)\//)) {
-              return "vendor-recharts";
-            }
-            // Group UI components and icons
-            if (id.match(/\/node_modules\/(@radix-ui|lucide-react)\//)) {
-              return "vendor-ui";
-            }
-            // Fallback for all other dependencies
-            return "vendor";
+            // Safely isolate heavy data and asset libraries only
+            if (id.includes("recharts")) return "vendor-charts";
+            if (id.includes("lucide-react")) return "vendor-icons";
+            // Let Vite natively handle React, DOM, and UI dependencies to prevent createContext errors
           }
         },
       },
