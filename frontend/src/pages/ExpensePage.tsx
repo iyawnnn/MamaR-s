@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchExpenses, createExpense } from "@/services/api";
+import { fetchExpenses, createExpense, updateExpense, deleteExpense } from "@/services/api";
 import { formatPHP } from "@/utils/currency";
 import {
   useReactTable,
@@ -18,6 +18,9 @@ import {
   LayoutGrid,
   Receipt,
   Tag,
+  Edit,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,41 +59,99 @@ const CATEGORIES = [
   "Other",
 ];
 
+const INITIAL_FORM_STATE = {
+  description: "",
+  amount: "",
+  category: "Ingredients",
+};
+
 export default function ExpensePage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [expenseForm, setExpenseForm] = useState({
-    description: "",
-    amount: "",
-    category: "Ingredients",
-  });
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+
+  const [expenseForm, setExpenseForm] = useState(INITIAL_FORM_STATE);
 
   const { data: expenses = [], isLoading } = useQuery<IExpense[]>({
     queryKey: ["expenses"],
     queryFn: fetchExpenses,
   });
 
-  const expenseMutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: createExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      setExpenseForm({ description: "", amount: "", category: "Ingredients" });
-      setIsModalOpen(false);
+      closeModal();
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<IExpense> }) => updateExpense(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      closeModal();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteExpense,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      setIsDeleteModalOpen(false);
+      setExpenseToDelete(null);
+    },
+  });
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => {
+      setExpenseForm(INITIAL_FORM_STATE);
+      setEditingId(null);
+    }, 200);
+  };
+
+  const handleEditClick = (expense: IExpense) => {
+    setEditingId(expense._id as string);
+    setExpenseForm({
+      description: expense.description,
+      amount: expense.amount.toString(),
+      category: expense.category,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteRequest = (id: string) => {
+    setExpenseToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDelete = () => {
+    if (expenseToDelete) {
+      deleteMutation.mutate(expenseToDelete);
+    }
+  };
 
   const handleExpenseSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!expenseForm.description || !expenseForm.amount) return;
-      expenseMutation.mutate({
+
+      const payload = {
         ...expenseForm,
         amount: Number(expenseForm.amount),
-      });
+      };
+
+      if (editingId) {
+        updateMutation.mutate({ id: editingId, data: payload });
+      } else {
+        createMutation.mutate(payload);
+      }
     },
-    [expenseForm, expenseMutation],
+    [expenseForm, editingId, createMutation, updateMutation]
   );
 
   const stats = useMemo(() => {
@@ -180,8 +241,32 @@ export default function ExpensePage() {
           </div>
         ),
       },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => (
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleEditClick(row.original)}
+              className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDeleteRequest(row.original._id as string)}
+              className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+      },
     ],
-    [],
+    []
   );
 
   const table = useReactTable({
@@ -197,8 +282,8 @@ export default function ExpensePage() {
   });
 
   return (
-    <div className="flex-1 space-y-8 p-8 pt-6 min-h-screen">
-      {/* Header Section */}
+    <div className="flex-1 space-y-8 p-8 pt-6 min-h-screen animate-in fade-in duration-500">
+      
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
         <div className="space-y-2">
           <h1 className="text-5xl sm:text-6xl font-serif font-black text-primary tracking-tighter leading-none">
@@ -210,8 +295,10 @@ export default function ExpensePage() {
           </p>
         </div>
 
-        {/* Modal / Dialog Trigger */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={(open) => {
+          if (!open) closeModal();
+          else setIsModalOpen(true);
+        }}>
           <DialogTrigger asChild>
             <Button className="group h-14 pl-6 pr-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-all duration-300 shadow-lg flex items-center gap-4 border-none">
               <span className="text-[10px] font-black uppercase tracking-[0.25em]">
@@ -223,7 +310,6 @@ export default function ExpensePage() {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[480px] p-0 border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden rounded-2xl gap-0">
-            {/* Modal Header */}
             <div className="p-8 border-b border-border/40 bg-muted/10 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
                 <Wallet className="w-32 h-32 text-foreground" />
@@ -234,24 +320,21 @@ export default function ExpensePage() {
                     <Receipt className="w-5 h-5 text-primary" />
                   </div>
                   <DialogTitle className="text-2xl font-serif font-black tracking-tight text-foreground">
-                    Record Outflow
+                    {editingId ? "Modify Outflow" : "Record Outflow"}
                   </DialogTitle>
                 </div>
                 <DialogDescription className="text-xs font-medium text-muted-foreground">
-                  Execute a new ledger entry. Ensure the correct classification
-                  is selected.
+                  {editingId ? "Update existing ledger entry details." : "Execute a new ledger entry. Ensure the correct classification is selected."}
                 </DialogDescription>
               </DialogHeader>
             </div>
 
-            {/* Modal Form Content */}
             <div className="p-8">
               <form
                 id="expense-form"
                 onSubmit={handleExpenseSubmit}
                 className="space-y-8"
               >
-                {/* Hero Amount Input */}
                 <div className="space-y-3">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <TrendingDown className="w-3 h-3 text-primary" />
@@ -280,7 +363,6 @@ export default function ExpensePage() {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Description Input */}
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Transaction Descriptor
@@ -299,7 +381,6 @@ export default function ExpensePage() {
                     />
                   </div>
 
-                  {/* Interactive Category Chips Grid */}
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                       <Tag className="w-3 h-3" />
@@ -328,24 +409,22 @@ export default function ExpensePage() {
               </form>
             </div>
 
-            {/* Modal Footer Action */}
             <div className="p-6 border-t border-border/40 bg-muted/5">
               <Button
                 type="submit"
                 form="expense-form"
-                disabled={expenseMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending}
                 className="w-full h-14 bg-primary text-white hover:bg-primary/90 font-black rounded-xl text-[11px] uppercase tracking-widest transition-all shadow-lg"
               >
-                {expenseMutation.isPending
+                {createMutation.isPending || updateMutation.isPending
                   ? "Executing..."
-                  : "Commit Transaction"}
+                  : (editingId ? "Commit Updates" : "Commit Transaction")}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* KPI Grid Section */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
@@ -383,7 +462,6 @@ export default function ExpensePage() {
         ))}
       </div>
 
-      {/* Data Table Section */}
       <Tabs
         defaultValue="all"
         className="space-y-6"
@@ -482,7 +560,6 @@ export default function ExpensePage() {
             </TableBody>
           </Table>
 
-          {/* Pagination Controls */}
           <div className="flex items-center justify-between px-8 py-5 border-t border-border/40 bg-muted/5">
             <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
               Page{" "}
@@ -514,6 +591,45 @@ export default function ExpensePage() {
           </div>
         </div>
       </Tabs>
+
+      {isDeleteModalOpen && expenseToDelete && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+          <div className="bg-card w-full max-w-md rounded-2xl border border-border/40 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-destructive" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-bold text-2xl text-foreground tracking-tight">Remove Ledger Entry</h3>
+                <p className="text-sm text-muted-foreground">
+                  Are you certain you want to permanently delete this expense? This action will impact your financial calculations and cannot be reversed.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 border-t border-border/40 bg-muted/10 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setTimeout(() => setExpenseToDelete(null), 200);
+                }}
+                className="h-11 px-6 rounded-xl text-xs font-bold uppercase tracking-widest"
+                disabled={deleteMutation.isPending}
+              >
+                Abort
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={executeDelete}
+                disabled={deleteMutation.isPending}
+                className="h-11 px-8 rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg"
+              >
+                {deleteMutation.isPending ? "Executing..." : "Execute Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

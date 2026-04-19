@@ -35,14 +35,17 @@ import {
   ShoppingCart,
   ChevronDown
 } from "lucide-react";
-import api from "@/services/api";
+import api, { updateOrder } from "@/services/api";
 import { formatPHP } from "@/utils/currency";
 import { cn } from "@/lib/utils";
+import { IOrder } from "@/types";
 
 interface OrderEntrySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  initialData?: IOrder | null;
+  order?: IOrder | null;
 }
 
 type CartItem = {
@@ -52,7 +55,7 @@ type CartItem = {
   quantity: number;
 };
 
-export default function OrderEntrySheet({ open, onOpenChange, onSuccess }: OrderEntrySheetProps) {
+export default function OrderEntrySheet({ open, onOpenChange, onSuccess, initialData }: OrderEntrySheetProps) {
   const [loading, setLoading] = useState(false);
   const [fetchingProducts, setFetchingProducts] = useState(false);
   const [catalog, setCatalog] = useState<any[]>([]);
@@ -63,12 +66,30 @@ export default function OrderEntrySheet({ open, onOpenChange, onSuccess }: Order
   
   const [cart, setCart] = useState<CartItem[]>([]);
 
+  const isEditing = !!initialData;
+
   useEffect(() => {
     if (open) {
       loadCatalog();
-      resetForm();
+      if (initialData) {
+        setCustomerName(initialData.customerName);
+        setCustomerContact(initialData.customerContact || "");
+        setTargetDate(initialData.targetDate ? new Date(initialData.targetDate) : new Date());
+        
+        // Maps saved database items back into the local cart state format
+        const hydratedCart = initialData.items.map((item: any) => ({
+          id: item._id || Math.random().toString(36).substr(2, 9),
+          product: item.product,
+          variant: item.variant ? { name: item.variant, price: item.priceAtTimeOfOrder } : null,
+          quantity: item.quantity,
+        }));
+        
+        setCart(hydratedCart);
+      } else {
+        resetForm();
+      }
     }
-  }, [open]);
+  }, [open, initialData]);
 
   const loadCatalog = async () => {
     setFetchingProducts(true);
@@ -165,16 +186,23 @@ export default function OrderEntrySheet({ open, onOpenChange, onSuccess }: Order
           priceAtTimeOfOrder: item.variant ? item.variant.price : item.product.price,
         })),
         totalAmount: calculateTotal(),
-        status: "PENDING",
-        paymentStatus: "UNPAID",
       };
 
-      await api.post("/orders", payload);
+      if (isEditing && initialData) {
+        await updateOrder(initialData._id, payload);
+      } else {
+        await api.post("/orders", {
+          ...payload,
+          status: "PENDING",
+          paymentStatus: "UNPAID",
+        });
+      }
+      
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error("Failed to create order", error);
-      alert("Failed to submit order. Please verify your connection.");
+      console.error("Failed to execute order operation", error);
+      alert("Failed to process request. Please verify your connection.");
     } finally {
       setLoading(false);
     }
@@ -194,18 +222,17 @@ export default function OrderEntrySheet({ open, onOpenChange, onSuccess }: Order
                 <ShoppingBag className="w-5 h-5 text-primary" />
               </div>
               <DialogTitle className="text-2xl font-serif font-black tracking-tight text-foreground">
-                Point of Sale Entry
+                {isEditing ? "Modify Existing Order" : "Point of Sale Entry"}
               </DialogTitle>
             </div>
             <DialogDescription className="text-xs font-medium text-muted-foreground ml-14">
-              Construct a new client order and configure product sizing variants.
+              {isEditing ? "Adjust client details and product roster for this order." : "Construct a new client order and configure product sizing variants."}
             </DialogDescription>
           </DialogHeader>
         </div>
 
         <div className="flex flex-col-reverse lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden">
           
-          {/* Left Column: Form & Cart */}
           <div className="w-full lg:w-[55%] flex flex-col border-t lg:border-t-0 lg:border-r border-border/40 bg-background min-w-0 shrink-0 lg:shrink">
             <div className="flex-1 lg:overflow-y-auto p-6 space-y-8 no-scrollbar">
               <form id="order-form" onSubmit={handleSubmit} className="space-y-8">
@@ -322,7 +349,7 @@ export default function OrderEntrySheet({ open, onOpenChange, onSuccess }: Order
                                   <SelectContent className="border-border/40 rounded-lg">
                                     {item.product.variants.map((v: any) => (
                                       <SelectItem key={v.name} value={v.name} className="font-bold text-xs">
-                                        {v.name} &mdash; {formatPHP(v.price)}
+                                        {v.name} - {formatPHP(v.price)}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -385,12 +412,11 @@ export default function OrderEntrySheet({ open, onOpenChange, onSuccess }: Order
                 disabled={loading || cart.length === 0}
                 className="w-full h-14 rounded-xl bg-foreground text-background hover:bg-foreground/90 font-black uppercase tracking-widest text-[11px] transition-all disabled:opacity-50 shadow-lg"
               >
-                {loading ? "Executing..." : "Commit Order Request"}
+                {loading ? "Executing..." : (isEditing ? "Submit Modifications" : "Commit Order Request")}
               </Button>
             </div>
           </div>
 
-          {/* Right Column: Catalog Grid */}
           <div className="flex w-full lg:w-[45%] flex-col bg-muted/10 min-w-0 shrink-0 lg:shrink">
             <div className="p-6 border-b border-border/40 bg-background/50 backdrop-blur-sm sticky top-0 z-10">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">

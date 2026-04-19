@@ -47,9 +47,27 @@ export const updateOrderStatus = async (
   return response.data;
 };
 
+export const updateOrder = async (id: string, data: Partial<IOrder>): Promise<IOrder> => {
+  const response = await api.patch<IOrder>(`/orders/${id}`, data);
+  return response.data;
+};
+
 export const createOrder = async (data: Partial<IOrder>): Promise<IOrder> => {
   const response = await api.post<IOrder>('/orders', data);
   return response.data;
+};
+
+export const deleteOrder = async (id: string): Promise<void> => {
+  await api.delete(`/orders/${id}`);
+};
+
+export const updateExpense = async (id: string, data: Partial<IExpense>): Promise<IExpense> => {
+  const response = await api.patch<IExpense>(`/expenses/${id}`, data);
+  return response.data;
+};
+
+export const deleteExpense = async (id: string): Promise<void> => {
+  await api.delete(`/expenses/${id}`);
 };
 
 export default api;
